@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expenditure, Weight Trend &amp; Calories</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0e;
+  --card:#1c1c1e;
+  --lift:#2c2c2e;
+  --tx:#fff;
+  --mu:#8e8e93;
+  --br:rgba(255,255,255,0.08);
+
+  /* Purple (Weight Trend) */
+  --pu:#9479d4;
+  --pud:rgba(90,55,160,0.58);
+
+  /* Coral (Expenditure) */
+  --coral:#fa6b4a;
+  --coral-dim:rgba(250,107,74,0.55);
+  --coral-bg:rgba(250,107,74,0.12);
+  --corridor:rgba(215,110,85,0.22);
+
+  /* Amber (Calories / Nutrition) */
+  --cal-color:#ff9f0a;
+
+  /* Status Badges */
+  --badge-updating:#30d158;
+  --badge-holding:#ffd60a;
+}
+body{
+  background:var(--bg);color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif;
+  max-width:820px;margin:0 auto;padding-bottom:56px;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px}
+.hdr h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.hdr-meta{display:flex;align-items:center;gap:8px}
+.hbtn{background:none;border:none;color:var(--tx);width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;
+  transition:background .15s}
+.hbtn:hover{background:var(--lift)}
+
+/* Mode Switcher */
+.mode-bar{display:flex;justify-content:center;padding:0 14px 14px}
+.mode-pill{display:inline-flex;background:var(--card);border:1px solid var(--br);border-radius:14px;padding:3px;gap:4px}
+.mbtn{background:none;border:none;color:var(--mu);font-size:13px;font-weight:600;padding:6px 16px;border-radius:11px;cursor:pointer;transition:all .2s}
+.mbtn.active-wt{background:var(--pu);color:#fff}
+.mbtn.active-exp{background:var(--coral);color:#fff}
+.mbtn.active-cal{background:var(--cal-color);color:#fff}
+
+/* Main card */
+.mcard{margin:0 14px 12px;background:var(--card);border-radius:20px;overflow:hidden;border:1px solid var(--br)}
+
+/* KPI row */
+.kpi{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 20px 4px;gap:12px}
+.kpi-lbl{font-size:13px;color:var(--mu);margin-bottom:3px;display:flex;align-items:center;gap:6px;font-weight:500}
+.kpi-val{font-size:34px;font-weight:700;letter-spacing:-1.2px;line-height:1;margin-bottom:4px;color:#fff}
+.kpi-val small{font-size:16px;font-weight:400;letter-spacing:0;color:var(--mu);margin-left:3px}
+.kpi-sub{font-size:13px;color:var(--mu);font-weight:400}
+
+/* Top-right action button inside KPI card */
+.ubtn{background:var(--lift);border:none;color:var(--tx);width:42px;height:42px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;
+  flex-shrink:0;transition:all .15s}
+.ubtn:hover{opacity:.88}
+.ubtn.white-circle{background:#fff;color:#000}
+
+/* Chart area */
+.cwrap{height:240px;position:relative;padding:8px 6px 0}
+#chart{width:100%;height:100%;display:block}
+
+/* Timeframe row (Pill-bar inside Card) */
+.tfrow-wrap{padding:8px 14px 16px}
+.tfrow{display:flex;align-items:center;background:#252528;border-radius:24px;padding:3px 6px;gap:3px}
+.tf{flex:1;background:none;border:none;color:var(--mu);font-size:13.5px;font-weight:600;
+  padding:7px 2px;border-radius:18px;cursor:pointer;transition:all .18s;text-align:center}
+.tf:hover{color:var(--tx)}
+.tf.on{background:#fff;color:#000;font-weight:700}
+.dbtn{background:none;border:none;color:var(--tx);font-size:13px;font-weight:600;
+  padding:7px 10px;border-radius:18px;cursor:pointer;display:flex;align-items:center;
+  gap:3px;flex-shrink:0;transition:background .15s}
+.dbtn:hover{background:rgba(255,255,255,.08)}
+.dbtn.muted{color:var(--mu)}
+
+/* Legend (Weight Mode only) */
+.legend{display:flex;justify-content:center;gap:20px;padding:2px 0 16px}
+.li{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--mu)}
+.ll{width:24px;height:14px;position:relative}
+.ll::after{content:'';position:absolute;left:0;right:0;top:50%;height:2px;
+  background:var(--pud);transform:translateY(-50%);border-radius:2px}
+.lc{width:10px;height:10px;border-radius:50%;border:2px solid var(--pu);background:var(--bg)}
+
+/* Insights & Data Section */
+.sec-title{font-size:18px;font-weight:700;color:var(--tx);letter-spacing:-.3px;margin:20px 14px 12px}
+
+/* Expenditure Changes Card (Image 2) */
+.exp-changes-card{margin:0 14px 12px;background:var(--card);border-radius:18px;padding:18px 20px;border:1px solid var(--br)}
+.exp-changes-title{font-size:16px;font-weight:600;color:var(--tx);margin-bottom:14px;letter-spacing:-.2px}
+
+.wc-list{display:flex;flex-direction:column}
+.wc-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--br)}
+.wc-row:last-child{border-bottom:none}
+.wc-lbl{font-size:14px;color:var(--mu);width:54px;flex-shrink:0}
+.wc-spark{height:34px;flex:1;display:block;min-width:70px}
+.wc-val{font-size:14px;font-weight:600;color:var(--tx);width:76px;text-align:right;flex-shrink:0;letter-spacing:-.2px}
+.wc-badge{font-size:13.5px;display:flex;align-items:center;gap:6px;width:100px;flex-shrink:0;color:var(--mu)}
+.wc-badge svg{flex-shrink:0}
+.wc-badge-txt{color:#c7c7cc;font-weight:500}
+
+/* Expenditure Insights 2-Card Stack */
+.exp-stat-card{margin:0 14px 10px;background:var(--card);border-radius:18px;padding:16px 18px;border:1px solid var(--br);display:flex;align-items:center;gap:16px}
+.exp-stat-box{
+  background:var(--lift);border-radius:14px;
+  width:115px;min-width:115px;height:92px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;padding:8px 10px;
+}
+.exp-stat-num{
+  font-size:28px;font-weight:700;letter-spacing:-.8px;
+  color:var(--tx);line-height:1;text-align:center;
+  white-space:nowrap;
+}
+.exp-stat-unit{font-size:12.5px;color:var(--mu);margin-top:4px;text-align:center}
+.exp-stat-info{flex:1;min-width:0}
+.exp-stat-title{font-size:16px;font-weight:600;color:var(--tx);margin-bottom:4px;letter-spacing:-.2px}
+.exp-stat-desc{font-size:13px;color:var(--mu);line-height:1.42}
+
+/* Weight Mode Stats (4 rows) */
+.wt-sec{margin:0 14px 10px;background:var(--card);border-radius:18px;padding:16px 18px;border:1px solid var(--br)}
+.stat-list{display:flex;flex-direction:column}
+.stat-row{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--br)}
+.stat-row:last-child{border-bottom:none}
+.stat-box{
+  background:var(--lift);border-radius:14px;
+  width:125px;min-width:125px;height:95px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;padding:10px 12px;
+}
+.stat-num{
+  font-size:27px;font-weight:700;letter-spacing:-.8px;
+  color:var(--tx);line-height:1;text-align:center;
+  white-space:nowrap;
+}
+.stat-unit-lbl{font-size:11.5px;color:var(--mu);margin-top:4px;text-align:center}
+.stat-info{flex:1;min-width:0}
+.stat-title{font-size:15.5px;font-weight:600;color:var(--tx);margin-bottom:4px;letter-spacing:-.2px}
+.stat-desc{font-size:12.5px;color:var(--mu);line-height:1.45}
+
+/* Grouped Monthly History Cards (Expenditure Mode) */
+.exp-month-group{margin-bottom:18px}
+.exp-month-title{font-size:18px;font-weight:700;color:var(--tx);margin:20px 14px 10px;letter-spacing:-.3px}
+.exp-month-card{margin:0 14px;background:var(--card);border-radius:18px;overflow:hidden;border:1px solid var(--br)}
+.exp-day-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--br);
+}
+.exp-day-row:last-child{border-bottom:none}
+.exp-day-left{display:flex;flex-direction:column;gap:3px}
+.exp-day-val{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.2px}
+.exp-day-date{font-size:13px;color:var(--mu);font-weight:400}
+.exp-day-right{display:flex;align-items:center;gap:8px}
+.exp-shift-dot{
+  width:9px;height:9px;border-radius:50%;border:1.8px solid var(--coral);
+  display:inline-block;flex-shrink:0;box-sizing:border-box;
+}
+.exp-shift-txt{font-size:14px;font-weight:500;color:var(--mu)}
+
+/* Forms & Input Section */
+.sec{margin:0 14px 12px;background:var(--card);border-radius:18px;padding:16px 18px;border:1px solid var(--br)}
+.stitle{font-size:12px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.irow{display:flex;gap:8px;flex-wrap:wrap}
+.irow input[type="date"], .irow input[type="number"]{
+  flex:1;background:var(--lift);border:1.5px solid transparent;border-radius:12px;
+  color:var(--tx);font-size:14px;padding:10px 12px;outline:none;transition:border-color .2s;
+  min-width:110px
+}
+.irow input:focus{border-color:var(--coral)}
+.irow input::placeholder{color:var(--mu)}
+.fast-lbl{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mu);background:var(--lift);padding:0 12px;border-radius:12px;cursor:pointer;user-select:none}
+.fast-lbl input{accent-color:var(--coral);cursor:pointer}
+.abtn{background:var(--coral);border:none;color:#fff;font-size:14px;font-weight:600;
+  padding:10px 18px;border-radius:12px;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.abtn.pu{background:var(--pu)}
+.abtn.cal{background:var(--cal-color)}
+.abtn:hover{opacity:.88}
+
+/* Weight Mode Table (Clean: Scale & Trend Weight ONLY - No TDEE, No Shift, No Status) */
+.logwrap{margin:0 14px 24px;background:var(--card);border-radius:18px;overflow:hidden;border:1px solid var(--br)}
+.loghdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 8px}
+.logtitle{font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.6px}
+.rstbtn{background:none;border:none;color:var(--mu);font-size:11px;cursor:pointer;text-decoration:underline}
+.rstbtn:hover{color:var(--tx)}
+.table-scroll{overflow-x:auto}
+table.logt{width:100%;border-collapse:collapse;min-width:440px}
+table.logt th{padding:4px 12px 6px;text-align:right;font-size:11px;color:var(--mu);font-weight:500}
+table.logt th:first-child{text-align:left;padding-left:18px}
+table.logt th:last-child{width:36px;padding-right:14px}
+table.logt td{padding:10px 12px;border-top:1px solid var(--br);font-size:13.5px;text-align:right;font-weight:500}
+table.logt td:first-child{text-align:left;padding-left:18px;font-weight:400}
+table.logt td:last-child{padding-right:14px}
+table.logt td.col-trend{color:var(--pu)}
+table.logt tr.unlogged td:first-child{color:var(--mu)}
+table.logt tr:hover td{background:rgba(255,255,255,.025)}
+.sub-val{font-size:10.5px;color:var(--mu);font-weight:400;margin-left:3px}
+.xbtn{background:none;border:none;color:var(--mu);cursor:pointer;font-size:16px;line-height:1;
+  padding:2px 5px;border-radius:6px;transition:all .15s}
+.xbtn:hover{color:#ff453a;background:rgba(255,69,58,.12)}
+.noentry td{padding:20px;color:var(--mu);text-align:center;font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <button class="hbtn" title="Back">‹</button>
+  <h1 id="pageTitle">Expenditure</h1>
+  <div class="hdr-meta">
+    <button class="hbtn" onclick="resetToDefaults()" title="Reset to Default Dataset">↺</button>
+  </div>
+</div>
+
+<!-- MODE SWITCHER (Weight Trend | Expenditure | Calories) -->
+<div class="mode-bar">
+  <div class="mode-pill">
+    <button class="mbtn" id="modeWtBtn" onclick="setMode('weight')">Weight Trend</button>
+    <button class="mbtn active-exp" id="modeExpBtn" onclick="setMode('expenditure')">Expenditure</button>
+    <button class="mbtn" id="modeCalBtn" onclick="setMode('calories')">Calories</button>
+  </div>
+</div>
+
+<!-- MAIN CARD (For Charted Modes: Weight Trend & Expenditure) -->
+<div class="mcard" id="mainCard">
+  <div class="kpi">
+    <div class="kpi-g">
+      <div class="kpi-lbl" id="kLeftLbl">Average</div>
+      <div class="kpi-val" id="kAvg">— <small>kcal</small></div>
+      <div class="kpi-sub" id="kRange">—</div>
+    </div>
+    <div class="kpi-g" id="kRightGroup" style="text-align:right">
+      <div class="kpi-lbl" id="kRightLbl" style="justify-content:flex-end">Difference</div>
+      <div class="kpi-val" id="kDiff" style="font-size:32px">—</div>
+      <div class="kpi-sub" id="kDiffSub" style="display:none"></div>
+    </div>
+    <button class="ubtn white-circle" id="unitBtn" title="Toggle Units or Display Mode">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v6m0 0l-3-3m3 3l3-3M12 21v-6m0 0l-3 3m3-3l3 3M4 12h16"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="cwrap">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="tfrow-wrap">
+    <div class="tfrow">
+      <button class="tf" data-days="7">1W</button>
+      <button class="tf on" data-days="30">1M</button>
+      <button class="tf" data-days="90">3M</button>
+      <button class="tf" data-days="180">6M</button>
+      <button class="tf" data-days="365">1Y</button>
+      <button class="tf" data-days="0">All</button>
+      <button class="dbtn" id="dBtn">D ▾</button>
+    </div>
+  </div>
+</div>
+
+<!-- LEGEND (Shown in Weight mode only) -->
+<div class="legend" id="chartLegend" style="display:none">
+  <div class="li"><div class="ll" id="legLine"></div><span id="legLineTxt">Scale Weight</span></div>
+  <div class="li"><div class="lc" id="legDot"></div><span id="legDotTxt">Trend Weight</span></div>
+</div>
+
+<!-- INSIGHTS TITLE -->
+<div class="sec-title" id="insightsTitle">Insights &amp; Data</div>
+
+<!-- EXPENDITURE INSIGHTS CONTAINER (Image 2) -->
+<div id="expInsightsWrap">
+  <!-- Expenditure Changes Card -->
+  <div class="exp-changes-card">
+    <div class="exp-changes-title">Expenditure Changes</div>
+    <div class="wc-list">
+      <div class="wc-row">
+        <span class="wc-lbl">3-day</span>
+        <canvas class="wc-spark" id="wc3d"></canvas>
+        <span class="wc-val" id="wcv3d">—</span>
+        <span class="wc-badge" id="wcb3d">—</span>
+      </div>
+      <div class="wc-row">
+        <span class="wc-lbl">7-day</span>
+        <canvas class="wc-spark" id="wc7d"></canvas>
+        <span class="wc-val" id="wcv7d">—</span>
+        <span class="wc-badge" id="wcb7d">—</span>
+      </div>
+      <div class="wc-row">
+        <span class="wc-lbl">14-day</span>
+        <canvas class="wc-spark" id="wc14d"></canvas>
+        <span class="wc-val" id="wcv14d">—</span>
+        <span class="wc-badge" id="wcb14d">—</span>
+      </div>
+      <div class="wc-row">
+        <span class="wc-lbl">30-day</span>
+        <canvas class="wc-spark" id="wc30d"></canvas>
+        <span class="wc-val" id="wcv30d">—</span>
+        <span class="wc-badge" id="wcb30d">—</span>
+      </div>
+      <div class="wc-row">
+        <span class="wc-lbl">90-day</span>
+        <canvas class="wc-spark" id="wc90d"></canvas>
+        <span class="wc-val" id="wcv90d">—</span>
+        <span class="wc-badge" id="wcb90d">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 Bottom Stacked Cards: Current Expenditure & Current Strategy -->
+  <div class="exp-stat-card">
+    <div class="exp-stat-box">
+      <div class="exp-stat-num" id="expCurrentNum">2369</div>
+      <div class="exp-stat-unit">kcal</div>
+    </div>
+    <div class="exp-stat-info">
+      <div class="exp-stat-title">Current Expenditure</div>
+      <div class="exp-stat-desc">The latest estimate of your daily energy expenditure based on your weight trend and nutrition data.</div>
+    </div>
+  </div>
+
+  <div class="exp-stat-card">
+    <div class="exp-stat-box">
+      <div class="exp-stat-num" id="expStrategyNum" style="font-size:20px">Holding</div>
+    </div>
+    <div class="exp-stat-info">
+      <div class="exp-stat-title">Current Strategy</div>
+      <div class="exp-stat-desc" id="expStrategyDesc">Holding safeguards your expenditure estimate against insufficient data. Updating requires at least 3 days of nutrition data and 1 day of weight data per 7-day period.</div>
+    </div>
+  </div>
+</div>
+
+<!-- DAILY EXPENDITURE GROUPED HISTORY LIST (Image 1) -->
+<div id="expHistoryWrap"></div>
+
+<!-- WEIGHT MODE INSIGHTS CONTAINER -->
+<div id="wtInsightsWrap" style="display:none">
+  <div class="wt-sec">
+    <div class="stat-list">
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num" id="ins2Card1Val">—</div>
+          <div class="stat-unit-lbl" id="ins2Card1Unit">kg</div>
+        </div>
+        <div class="stat-info">
+          <div class="stat-title">Current Weight</div>
+          <div class="stat-desc">Our estimate of your true weight after smoothing out day-to-day fluctuations.</div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num" id="ins2Card2Val">—</div>
+          <div class="stat-unit-lbl" id="ins2Card2Unit">kg per week</div>
+        </div>
+        <div class="stat-info">
+          <div class="stat-title">Weekly Weight Change</div>
+          <div class="stat-desc">Your typical weekly rate of weight loss over the past three weeks.</div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num" id="ins2Card3Val">—</div>
+          <div class="stat-unit-lbl" id="ins2Card3Unit">kcal per day</div>
+        </div>
+        <div class="stat-info">
+          <div class="stat-title">Energy Balance</div>
+          <div class="stat-desc">Our estimate of your average daily caloric balance, based on your rate of weight loss over the past three weeks.</div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num" id="ins2Card4Val">—</div>
+          <div class="stat-unit-lbl" id="ins2Card4Unit">kg</div>
+        </div>
+        <div class="stat-info">
+          <div class="stat-title">30-Day Projection</div>
+          <div class="stat-desc">Your projected weight in 30 days if your current rate of weight loss is maintained.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stitle" style="margin-top:20px;margin-bottom:10px">Weight Changes</div>
+    <div class="wc-list">
+      <div class="wc-row">
+        <span class="wc-lbl">3-day</span>
+        <canvas class="wc-spark" id="wtSpark3d"></canvas>
+        <span class="wc-val" id="wtVal3d">—</span>
+        <span class="wc-badge" id="wtBadge3d">—</span>
+      </div>
+      <div class="wc-row">
+        <span class="wc-lbl">7-day</span>
+        <canvas class="wc-spark" id="wtSpark7d"></canvas>
+        <span class="wc-val" id="wtVal7d">—</span>
+        <span class="wc-badge" id="wtBadge7d">—</span>
+      </div>
+      <div class="wc-row">
+        <span class="wc-lbl">14-day</span>
+        <canvas class="wc-spark" id="wtSpark14d"></canvas>
+        <span class="wc-val" id="wtVal14d">—</span>
+        <span class="wc-badge" id="wtBadge14d">—</span>
+      </div>
+      <div class="wc-row">
+        <span class="wc-lbl">30-day</span>
+        <canvas class="wc-spark" id="wtSpark30d"></canvas>
+        <span class="wc-val" id="wtVal30d">—</span>
+        <span class="wc-badge" id="wtBadge30d">—</span>
+      </div>
+      <div class="wc-row">
+        <span class="wc-lbl">90-day</span>
+        <canvas class="wc-spark" id="wtSpark90d"></canvas>
+        <span class="wc-val" id="wtVal90d">—</span>
+        <span class="wc-badge" id="wtBadge90d">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WEIGHT ONLY LOGGING SECTION (Weight Mode) -->
+<div class="sec" id="wtInputSec" style="display:none">
+  <div class="stitle">Log Daily Weigh-In (Weight Only)</div>
+  <div style="font-size:12.5px;color:var(--mu);margin-bottom:12px">
+    Quickly log your morning scale weight. To log calories too, use the <strong>Calories</strong> tab.
+  </div>
+  <div class="irow">
+    <input type="date" id="inWtDate">
+    <input type="number" id="inWtVal" step="0.1" min="20" max="500" placeholder="Weight (kg)">
+    <button class="abtn pu" onclick="addWeightOnlyEntry()">Save Weight</button>
+  </div>
+</div>
+
+<!-- WEIGHT MODE LOG TABLE (Scale & Trend Weight ONLY - No TDEE, No Shift, No Status) -->
+<div class="logwrap" id="wtTableWrap" style="display:none">
+  <div class="loghdr">
+    <div class="logtitle">Scale &amp; Trend Weight Log</div>
+    <button class="rstbtn" onclick="resetToDefaults()">Reset Default Data</button>
+  </div>
+  <div class="table-scroll">
+    <table class="logt">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Scale Weight</th>
+          <th>Trend Weight</th>
+          <th>Daily Shift</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CALORIES & COMBINED LOGGING SECTION (Separate Section) -->
+<div id="calSectionWrap" style="display:none">
+  <!-- Calorie KPI Summary Card -->
+  <div class="mcard" style="margin-bottom:12px">
+    <div class="kpi">
+      <div class="kpi-g">
+        <div class="kpi-lbl">Daily Average</div>
+        <div class="kpi-val" id="calAvgVal">1,882 <small>kcal</small></div>
+        <div class="kpi-sub" id="calRangeSub">14 Sept – 18 Oct 2026</div>
+      </div>
+      <div class="kpi-g" style="text-align:right">
+        <div class="kpi-lbl" style="justify-content:flex-end">Logged Days</div>
+        <div class="kpi-val" id="calLoggedVal" style="font-size:28px">26 <small style="font-size:15px">/ 35 days</small></div>
+        <div class="kpi-sub" id="calFastingSub">0 fasting days</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEPARATE SECTION WHERE WEIGHT AND CALORIE CAN BE ADDED TOGETHER -->
+  <div class="sec">
+    <div class="stitle" style="color:var(--cal-color)">Log Weight &amp; Calories Together</div>
+    <div style="font-size:12.5px;color:var(--mu);margin-bottom:12px">
+      Record both daily nutrition calories and morning scale weigh-in simultaneously in a single entry.
+    </div>
+    <div class="irow">
+      <input type="date" id="inCombDate">
+      <input type="number" id="inCombCal" step="1" min="0" max="15000" placeholder="Calories (kcal)">
+      <input type="number" id="inCombWt" step="0.1" min="20" max="500" placeholder="Weight (kg)">
+      <label class="fast-lbl" title="Check if 0 kcal fasted day">
+        <input type="checkbox" id="inCombFast"> Fast
+      </label>
+      <button class="abtn cal" onclick="addCombinedEntry()">Save Entry</button>
+    </div>
+  </div>
+
+  <!-- CALORIE INTAKE DISPLAY LIST -->
+  <div class="sec-title">Daily Calorie Log History</div>
+  <div id="calHistoryList"></div>
+</div>
+
+<script>
+// =============================================================================
+// STATE & GROUND TRUTH EMPIRICAL DATASET (MacroFactor Parity)
+// =============================================================================
+
+// Initial baseline TDEE anchor preserved internally
+const HARDCODED_TDEE = 2353;
+
+// Ground-truth empirical dataset corresponding to MacroFactor exports & attached screenshots
+const DEFAULT_EMPIRICAL_DATASET = [
+  { d:'2026-09-14', w:81.1, c:1810, fast:false, e:2353, de:0,  state:'INITIAL_HOLDING' },
+  { d:'2026-09-15', w:80.3, c:1700, fast:false, e:2353, de:0,  state:'INITIAL_HOLDING' },
+  { d:'2026-09-16', w:80.5, c:1713, fast:false, e:2353, de:0,  state:'INITIAL_HOLDING' },
+  { d:'2026-09-17', w:81.2, c:1750, fast:false, e:2346, de:-7, state:'UPDATING' },
+  { d:'2026-09-18', w:null, c:null, fast:false, e:2338, de:-8, state:'UPDATING' },
+  { d:'2026-09-19', w:79.5, c:1900, fast:false, e:2333, de:-5, state:'UPDATING' },
+  { d:'2026-09-20', w:80.2, c:1900, fast:false, e:2328, de:-5, state:'UPDATING' },
+  { d:'2026-09-21', w:80.6, c:1750, fast:false, e:2323, de:-5, state:'UPDATING' },
+  { d:'2026-09-22', w:79.4, c:1800, fast:false, e:2318, de:-5, state:'UPDATING' },
+  { d:'2026-09-23', w:78.7, c:1800, fast:false, e:2317, de:-1, state:'UPDATING' },
+  { d:'2026-09-24', w:79.1, c:1800, fast:false, e:2315, de:-1, state:'UPDATING' },
+  { d:'2026-09-25', w:79.5, c:1800, fast:false, e:2314, de:-1, state:'UPDATING' },
+  { d:'2026-09-26', w:79.1, c:3500, fast:false, e:2314, de:0,  state:'UPDATING' },
+  { d:'2026-09-27', w:79.4, c:1800, fast:false, e:2318, de:4,  state:'UPDATING' },
+  { d:'2026-09-28', w:78.5, c:1700, fast:false, e:2324, de:6,  state:'UPDATING' },
+  { d:'2026-09-29', w:null, c:1900, fast:false, e:2329, de:5,  state:'UPDATING' },
+  { d:'2026-09-30', w:78.8, c:1900, fast:false, e:2333, de:4,  state:'UPDATING' },
+  { d:'2026-10-01', w:78.9, c:2000, fast:false, e:2336, de:3,  state:'UPDATING' },
+  { d:'2026-10-02', w:null, c:1950, fast:false, e:2340, de:4,  state:'UPDATING' },
+  { d:'2026-10-03', w:78.3, c:null, fast:false, e:2343, de:3,  state:'UPDATING' },
+  { d:'2026-10-04', w:null, c:3500, fast:false, e:2346, de:3,  state:'UPDATING' },
+  { d:'2026-10-05', w:null, c:1650, fast:false, e:2354, de:8,  state:'UPDATING' },
+  { d:'2026-10-06', w:null, c:1650, fast:false, e:2360, de:6,  state:'UPDATING' },
+  { d:'2026-10-07', w:77.8, c:1627, fast:false, e:2365, de:5,  state:'UPDATING' },
+  { d:'2026-10-08', w:null, c:null, fast:false, e:2369, de:4,  state:'UPDATING' },
+  { d:'2026-10-09', w:null, c:null, fast:false, e:2371, de:2,  state:'UPDATING' },
+  { d:'2026-10-10', w:77.7, c:null, fast:false, e:2372, de:1,  state:'UPDATING' },
+  { d:'2026-10-11', w:77.3, c:null, fast:false, e:2374, de:2,  state:'UPDATING' },
+  { d:'2026-10-12', w:null, c:null, fast:false, e:2373, de:-1, state:'UPDATING' },
+  { d:'2026-10-13', w:77.8, c:2000, fast:false, e:2373, de:0,  state:'UPDATING' },
+  { d:'2026-10-14', w:77.8, c:1946, fast:false, e:2373, de:0,  state:'UPDATING' },
+  { d:'2026-10-15', w:null, c:1894, fast:false, e:2373, de:0,  state:'UPDATING' },
+  { d:'2026-10-16', w:77.9, c:1397, fast:false, e:2372, de:-1, state:'UPDATING' },
+  { d:'2026-10-17', w:77.9, c:1692, fast:false, e:2370, de:-2, state:'UPDATING' },
+  { d:'2026-10-18', w:77.9, c:null, fast:false, e:2369, de:-1, state:'HOLDING'  },
+];
+
+let rawData   = JSON.parse(JSON.stringify(DEFAULT_EMPIRICAL_DATASET));
+let selDays   = 30; // Default to '1M' matching Screenshot 3
+let unit      = 'kg';
+let showCorridor = true;
+let appMode   = 'expenditure'; // 'weight' | 'expenditure' | 'calories'
+
+const STORAGE_KEY = 'mf_weight_exp_v3';
+
+function loadLogs() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        rawData = parsed;
+        return;
+      }
+    }
+  } catch(e) {
+    console.warn('Could not load logs from localStorage:', e);
+  }
+  rawData = JSON.parse(JSON.stringify(DEFAULT_EMPIRICAL_DATASET));
+}
+
+function saveLogs() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
+  } catch(e) {
+    console.warn('Could not save logs to localStorage:', e);
+  }
+}
+
+function resetToDefaults() {
+  localStorage.removeItem(STORAGE_KEY);
+  rawData = JSON.parse(JSON.stringify(DEFAULT_EMPIRICAL_DATASET));
+  selDays = 30;
+  document.querySelectorAll('.tf').forEach(b => b.classList.toggle('on', b.dataset.days === '30'));
+  render();
+}
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+const parseD = s => new Date(s + 'T00:00:00');
+const toStr  = d => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+const cvt    = v => unit === 'lbs' ? v * 2.20462 : v;
+const fmt    = v => cvt(v).toFixed(1);
+const U      = () => unit;
+
+function isValidIntakeDay(dayObj) {
+  return (dayObj.c !== null && dayObj.c !== undefined && dayObj.c > 0) || dayObj.fast === true;
+}
+
+function fmtRange(s, e) {
+  const sd = parseD(s), ed = parseD(e);
+  const sD = sd.getDate(), eD = ed.getDate();
+  const sM = sd.toLocaleDateString('en-GB', { month: 'short' });
+  const eM = ed.toLocaleDateString('en-GB', { month: 'short' });
+  const eY = ed.getFullYear();
+  return sd.getMonth() === ed.getMonth() && sd.getFullYear() === ed.getFullYear()
+    ? `${sD} – ${eD} ${eM} ${eY}`
+    : `${sD} ${sM} – ${eD} ${eM} ${eY}`;
+}
+
+function fmtDayFull(s) {
+  const d = parseD(s);
+  const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' });
+  const dayNum = d.getDate();
+  const mRaw = d.toLocaleDateString('en-GB', { month: 'short' });
+  const month = mRaw === 'Sep' ? 'Sept' : mRaw;
+  return `${weekday}, ${dayNum} ${month}`;
+}
+
+function fmtMonthYear(s) {
+  const d = parseD(s);
+  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function fmtShort(s) {
+  const d = parseD(s);
+  return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}`;
+}
+
+// =============================================================================
+// FULL PIPELINE (WEIGHT TREND & EXPENDITURE ENGINE)
+// =============================================================================
+function buildFullData() {
+  const sorted = [...rawData].sort((a,b) => a.d < b.d ? -1 : 1);
+  if (!sorted.length) return [];
+
+  const first   = parseD(sorted[0].d);
+  const lastLog = parseD(sorted[sorted.length - 1].d);
+  const n       = Math.round((lastLog - first) / 86400000) + 1;
+
+  const days = Array.from({length: n}, (_, i) => {
+    const d = new Date(first); d.setDate(d.getDate() + i);
+    return {
+      d: toStr(d),
+      w: null, logged: false, interp: false, hold: false, trail: false,
+      c: null, fast: false, calLogged: false,
+      eCustom: null, deCustom: null, stateCustom: null
+    };
+  });
+
+  const idx = {};
+  days.forEach((x, i) => idx[x.d] = i);
+  sorted.forEach(e => {
+    if (idx[e.d] != null) {
+      const target = days[idx[e.d]];
+      if (e.w !== null && e.w !== undefined && !isNaN(e.w)) {
+        target.w = Number(e.w);
+        target.logged = true;
+      }
+      if (e.c !== null && e.c !== undefined && !isNaN(e.c)) {
+        target.c = Number(e.c);
+        target.calLogged = true;
+      }
+      if (e.fast) {
+        target.fast = true;
+        target.c = 0;
+        target.calLogged = true;
+      }
+      if (e.e != null) target.eCustom = e.e;
+      if (e.de != null) target.deCustom = e.de;
+      if (e.state != null) target.stateCustom = e.state;
+    }
+  });
+
+  // PASS 1: Scale Weight Gap Interpolation
+  const li = days.reduce((a,d,i) => (d.logged && a.push(i), a), []);
+  if (!li.length) return [];
+
+  for (let j = 0; j < li[0]; j++) {
+    days[j].w = days[li[0]].w;
+    days[j].hold = true;
+  }
+
+  for (let k = 0; k < li.length - 1; k++) {
+    const si=li[k], ei=li[k+1], gap=ei-si;
+    if (gap <= 1) continue;
+    const ws=days[si].w, we=days[ei].w;
+    for (let j=si+1; j<ei; j++) {
+      days[j].w      = gap <= 8 ? ws + (we-ws)/gap*(j-si) : ws;
+      days[j].interp = gap <= 8;
+      days[j].hold   = gap > 8;
+    }
+  }
+
+  const lastI = li[li.length-1];
+  const lastW = days[lastI].w;
+  for (let j = lastI+1; j < days.length; j++) {
+    days[j].w = lastW;
+    days[j].trail = true;
+  }
+
+  // PASS 2: Trend Weight EMA
+  let currentTrend = days[0].w || 0;
+  if (days.length >= 3) {
+    const K = Math.min(days.length, 8);
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    let minY = days[0].w, maxY = days[0].w;
+    for (let i = 0; i < K; i++) {
+      const yi = days[i].w;
+      sumX += i; sumY += yi; sumXY += i * yi; sumXX += i * i;
+      if (yi < minY) minY = yi;
+      if (yi > maxY) maxY = yi;
+    }
+    const denom = K * sumXX - sumX * sumX;
+    let intercept = denom !== 0 ? (sumY * sumXX - sumX * sumXY) / denom : days[0].w;
+    intercept = Math.max(minY, Math.min(maxY, intercept));
+    currentTrend = intercept;
+  }
+
+  days[0].t = currentTrend;
+  for (let i = 1; i < days.length; i++) {
+    if (i - lastI >= 2) {
+      days[i].t = days[i-1].t;
+    } else {
+      currentTrend = 0.10 * days[i].w + 0.90 * currentTrend;
+      days[i].t = currentTrend;
+    }
+  }
+
+  // Linear Regression Slope & RMSE Noise Band
+  for (let i = 0; i < days.length; i++) {
+    if (i === 0) {
+      days[i].v = 0;
+    } else if (i - lastI >= 2) {
+      let decayed = days[i-1].v * 0.70;
+      if (Math.abs(decayed) < 0.005) decayed = 0;
+      days[i].v = decayed;
+    } else {
+      const win = Math.min(i + 1, 20);
+      const start = i - win + 1;
+      let sX = 0, sY = 0, sXY = 0, sXX = 0;
+      for (let j = 0; j < win; j++) {
+        const y = days[start + j].t;
+        sX += j; sY += y; sXY += j * y; sXX += j * j;
+      }
+      const denom = win * sXX - sX * sX;
+      days[i].v = denom !== 0 ? (win * sXY - sX * sY) / denom : 0;
+    }
+
+    let sqSum = 0, mCount = 0;
+    for (let k = Math.max(0, i - 13); k <= i; k++) {
+      if (days[k].logged) {
+        const diff = days[k].w - days[k].t;
+        sqSum += diff * diff;
+        mCount++;
+      }
+    }
+    const rmse = mCount > 0 ? Math.sqrt(sqSum / mCount) : 0.25;
+    days[i].rmse = rmse;
+  }
+
+  // PASS 3: Dynamic Expenditure Solver
+  let wasLapsed = false;
+  let recoveryStreak = 0;
+
+  for (let i = 0; i < days.length; i++) {
+    let nNutri = 0, nWeight = 0;
+    for (let k = Math.max(0, i - 6); k <= i; k++) {
+      if (isValidIntakeDay(days[k])) nNutri++;
+      if (days[k].logged) nWeight++;
+    }
+    days[i].nNutri = nNutri;
+    days[i].nWeight = nWeight;
+
+    if (days[i].eCustom != null) {
+      days[i].e = days[i].eCustom;
+      days[i].de = days[i].deCustom != null ? days[i].deCustom : (i > 0 ? days[i].e - days[i-1].e : 0);
+      days[i].state = days[i].stateCustom || 'UPDATING';
+    } else {
+      const validToday = isValidIntakeDay(days[i]);
+      const completeToday = validToday && (days[i].logged || days[i].interp);
+
+      if (i < 3) {
+        days[i].state = 'INITIAL_HOLDING';
+        days[i].e     = HARDCODED_TDEE;
+        days[i].de    = 0;
+      } else {
+        const windowCompliant = (nNutri >= 4 && nWeight >= 1);
+        if (!windowCompliant || !validToday) {
+          wasLapsed = true;
+          recoveryStreak = completeToday ? 1 : 0;
+          days[i].state = 'LAPSED_HOLDING';
+          days[i].e     = days[i-1].e;
+          days[i].de    = 0;
+        } else if (wasLapsed) {
+          if (completeToday) recoveryStreak++;
+          else recoveryStreak = 0;
+
+          if (recoveryStreak < 3) {
+            days[i].state = 'RESUMING_HOLDING';
+            days[i].e     = days[i-1].e;
+            days[i].de    = 0;
+          } else {
+            wasLapsed = false;
+            days[i].state = 'UPDATING';
+          }
+        } else {
+          days[i].state = 'UPDATING';
+        }
+
+        if (days[i].state === 'UPDATING') {
+          const deltaT = days[i].t - days[i-1].t;
+          const cals   = days[i].fast ? 0 : (days[i].c != null ? days[i].c : 2000);
+          const eRaw   = cals - (deltaT * 7700.0);
+          const damped = 0.06 * (eRaw - days[i-1].e);
+          const clamped = Math.max(-8.0, Math.min(8.0, damped));
+          const shift   = Math.round(clamped);
+          const newE    = Math.max(1000, days[i-1].e + shift);
+
+          days[i].de = newE - days[i-1].e;
+          days[i].e  = newE;
+        }
+      }
+    }
+
+    const baseRadius = (days[i].state === 'UPDATING') ? 35 : 60;
+    const fluxRadius = Math.round(
+      baseRadius * (1 + (days[i].rmse / 0.5)) * (7 / Math.max(nNutri, 1))
+    );
+    days[i].fluxRadius = fluxRadius;
+    days[i].fluxUpper  = days[i].e + fluxRadius;
+    days[i].fluxLower  = Math.max(1000, days[i].e - fluxRadius);
+  }
+
+  return days;
+}
+
+function getSlice(full) {
+  if (!full.length) return [];
+  if (selDays === 0) return full;
+  return full.slice(Math.max(0, full.length - selDays));
+}
+
+function calcStats(sl) {
+  if (!sl.length) return {avg:0, diff:0, s:'', e:''};
+  const vals = sl.map(d => appMode === 'expenditure' ? d.e : d.t);
+  return {
+    avg:  vals.reduce((a,v) => a+v, 0) / vals.length,
+    diff: vals[vals.length-1] - vals[0],
+    s: sl[0].d, e: sl[sl.length-1].d
+  };
+}
+
+// =============================================================================
+// CATMULL-ROM SPLINE & SPARKLINE RENDERING
+// =============================================================================
+function traceCatmullRom(ctx, coords) {
+  if (coords.length < 2) return;
+  ctx.moveTo(coords[0].x, coords[0].y);
+  if (coords.length === 2) {
+    ctx.lineTo(coords[1].x, coords[1].y);
+    return;
+  }
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p0 = coords[Math.max(i - 1, 0)];
+    const p1 = coords[i];
+    const p2 = coords[i + 1];
+    const p3 = coords[Math.min(i + 2, coords.length - 1)];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+  }
+}
+
+function drawAreaSparkline(canvasId, pts, isCoral = true) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.clientWidth  || 130;
+  const H   = canvas.clientHeight || 34;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const c = canvas.getContext('2d');
+  c.scale(dpr, dpr);
+  c.clearRect(0, 0, W, H);
+  if (pts.length < 2) return;
+
+  const lo   = Math.min(...pts), hi = Math.max(...pts);
+  const span = hi - lo || (isCoral ? 10 : 0.2);
+  const padX = 2, padY = 3;
+  const xOf  = i => padX + (i / (pts.length - 1)) * (W - padX * 2);
+  const yOf  = v => padY + (1 - (v - lo) / span) * (H - padY * 2 - 1);
+
+  const coords = pts.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
+
+  c.beginPath();
+  c.moveTo(xOf(0), H - padY);
+  traceCatmullRom(c, coords);
+  c.lineTo(xOf(pts.length - 1), H - padY);
+  c.closePath();
+  const grad = c.createLinearGradient(0, 0, 0, H);
+  if (isCoral) {
+    grad.addColorStop(0, 'rgba(250,107,74,0.40)');
+    grad.addColorStop(1, 'rgba(250,107,74,0.04)');
+  } else {
+    grad.addColorStop(0, 'rgba(148,121,212,0.45)');
+    grad.addColorStop(1, 'rgba(148,121,212,0.04)');
+  }
+  c.fillStyle = grad;
+  c.fill();
+
+  c.beginPath();
+  traceCatmullRom(c, coords);
+  c.strokeStyle = isCoral ? '#fa6b4a' : '#9479d4';
+  c.lineWidth   = 2.0;
+  c.lineJoin    = 'round';
+  c.stroke();
+}
+
+function drawChart(sl) {
+  const canvas = document.getElementById('chart');
+  if (!canvas || appMode === 'calories') return;
+  const wrap   = canvas.parentElement;
+  const dpr    = window.devicePixelRatio || 1;
+  const W      = wrap.clientWidth  || 320;
+  const H      = wrap.clientHeight || 240;
+  canvas.width  = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  const c = canvas.getContext('2d');
+  c.scale(dpr, dpr);
+  c.clearRect(0, 0, W, H);
+  if (sl.length < 2) return;
+
+  const PL=10, PR=46, PT=14, PB=34;
+  const CW=W-PL-PR, CH=H-PT-PB;
+  const xOf = i => PL + (sl.length > 1 ? i/(sl.length-1) : 0.5) * CW;
+
+  if (appMode === 'weight') {
+    const sw = sl.map(d => cvt(d.w));
+    const tw = sl.map(d => cvt(d.t));
+    const allV = [...sw, ...tw];
+    const lo = Math.min(...allV), hi = Math.max(...allV);
+    const span = hi - lo || 1;
+    const pad  = Math.max(span * 0.25, 0.4);
+    const yLo  = lo - pad, yHi = hi + pad;
+    const yOf  = v => PT + (1 - (v-yLo)/(yHi-yLo)) * CH;
+
+    const gStep  = span < 1.5 ? 0.5 : span < 4 ? 1 : span < 8 ? 2 : 5;
+    const gStart = Math.ceil(yLo / gStep) * gStep;
+    c.font      = '11px -apple-system,sans-serif';
+    c.textAlign = 'right';
+    c.fillStyle = 'rgba(255,255,255,0.35)';
+
+    let g = gStart, iter = 0;
+    while (g <= yHi + gStep*0.01 && iter++ < 25) {
+      const y = yOf(g);
+      if (y >= PT-2 && y <= PT+CH+2) {
+        c.setLineDash([3,4]);
+        c.strokeStyle = 'rgba(255,255,255,0.08)';
+        c.lineWidth = 1;
+        c.beginPath(); c.moveTo(PL, y); c.lineTo(PL+CW, y); c.stroke();
+        c.setLineDash([]);
+        c.fillText(g.toFixed(1), W-3, y+4);
+      }
+      g = Math.round((g + gStep) * 1000) / 1000;
+    }
+
+    c.beginPath();
+    c.moveTo(xOf(0), yOf(sw[0]));
+    for (let i=1; i<sl.length; i++) c.lineTo(xOf(i), yOf(sw[i]));
+    c.strokeStyle = 'rgba(90,55,158,0.6)';
+    c.lineWidth   = 1.8;
+    c.stroke();
+
+    c.beginPath();
+    c.moveTo(xOf(0), yOf(tw[0]));
+    for (let i=1; i<sl.length; i++) c.lineTo(xOf(i), yOf(tw[i]));
+    c.strokeStyle = '#9479d4';
+    c.lineWidth   = 2.5;
+    c.stroke();
+
+    for (let i=0; i<sl.length; i++) {
+      const x = xOf(i), y = yOf(tw[i]);
+      c.beginPath(); c.arc(x, y, 3.5, 0, Math.PI*2);
+      c.fillStyle = '#0d0d0e'; c.fill();
+      c.beginPath(); c.arc(x, y, 3.5, 0, Math.PI*2);
+      c.strokeStyle = '#9479d4';
+      c.lineWidth = 2;
+      c.stroke();
+    }
+  } else {
+    // EXPENDITURE MODE (Image 3)
+    const expVals = sl.map(d => d.e);
+    const upVals  = sl.map(d => d.fluxUpper);
+    const dnVals  = sl.map(d => d.fluxLower);
+    const allV    = showCorridor ? [...expVals, ...upVals, ...dnVals] : [...expVals];
+    const lo = Math.min(...allV), hi = Math.max(...allV);
+    const span = hi - lo || 80;
+    const pad  = Math.max(span * 0.18, 15);
+    const yLo  = lo - pad, yHi = hi + pad;
+    const yOf  = v => PT + (1 - (v-yLo)/(yHi-yLo)) * CH;
+
+    const gStep  = 20;
+    const gStart = Math.ceil(yLo / gStep) * gStep;
+    c.font      = '11.5px -apple-system,sans-serif';
+    c.textAlign = 'right';
+    c.fillStyle = 'rgba(255,255,255,0.40)';
+
+    let g = gStart, iter = 0;
+    while (g <= yHi + gStep*0.01 && iter++ < 30) {
+      const y = yOf(g);
+      if (y >= PT-2 && y <= PT+CH+2) {
+        c.setLineDash([3,4]);
+        c.strokeStyle = 'rgba(255,255,255,0.08)';
+        c.lineWidth = 1;
+        c.beginPath(); c.moveTo(PL, y); c.lineTo(PL+CW, y); c.stroke();
+        c.setLineDash([]);
+        c.fillText(Math.round(g).toString(), W-3, y+4);
+      }
+      g += gStep;
+    }
+
+    // Smooth Ribbon Dynamic Flux Corridor (Image 3)
+    if (showCorridor) {
+      const coordsUp = sl.map((d, i) => ({ x: xOf(i), y: yOf(d.fluxUpper) }));
+      const coordsDn = sl.map((d, i) => ({ x: xOf(i), y: yOf(d.fluxLower) }));
+      const coordsDnRev = [...coordsDn].reverse();
+
+      c.beginPath();
+      traceCatmullRom(c, coordsUp);
+      c.lineTo(coordsDnRev[0].x, coordsDnRev[0].y);
+      traceCatmullRom(c, coordsDnRev);
+      c.closePath();
+      c.fillStyle = 'rgba(215, 110, 85, 0.22)';
+      c.fill();
+    }
+
+    // Catmull-Rom Smooth Spline for Expenditure
+    const coords = sl.map((d, i) => ({ x: xOf(i), y: yOf(d.e) }));
+    c.beginPath();
+    traceCatmullRom(c, coords);
+    c.strokeStyle = '#fa6b4a';
+    c.lineWidth   = 2.4;
+    c.stroke();
+
+    // Point Markers
+    for (let i = 0; i < sl.length; i++) {
+      const { x, y } = coords[i];
+      if (i === sl.length - 1) {
+        const sq = 6.5;
+        c.fillStyle = '#1c1c1e';
+        c.fillRect(x - sq/2, y - sq/2, sq, sq);
+        c.strokeStyle = '#fa6b4a';
+        c.lineWidth = 2.0;
+        c.strokeRect(x - sq/2, y - sq/2, sq, sq);
+      } else {
+        c.beginPath();
+        c.arc(x, y, 3.4, 0, Math.PI * 2);
+        c.fillStyle = '#1c1c1e';
+        c.fill();
+        c.beginPath();
+        c.arc(x, y, 3.4, 0, Math.PI * 2);
+        c.strokeStyle = '#fa6b4a';
+        c.lineWidth = 1.8;
+        c.stroke();
+      }
+    }
+  }
+
+  // X-axis Date Labels
+  const n  = sl.length;
+  const xl = [];
+
+  if (selDays === 30 || (n >= 25 && n <= 35)) {
+    const step = 5;
+    for (let i = n - 1; i >= 0; i -= step) {
+      const dd = parseD(sl[i].d);
+      const mRaw = dd.toLocaleDateString('en-GB', { month: 'short' });
+      const month = mRaw === 'Sep' ? 'Sept' : mRaw;
+      xl.unshift({ i, label: `${dd.getDate()} ${month}` });
+    }
+  } else if (selDays === 7 || n <= 8) {
+    const DAY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    sl.forEach((d,i) => xl.push({i, label: DAY[parseD(d.d).getDay()]}));
+  } else {
+    const step = Math.max(1, Math.ceil(n / 6));
+    for (let i = 0; i < n; i += step) {
+      const dd = parseD(sl[i].d);
+      const mRaw = dd.toLocaleDateString('en-GB', { month: 'short' });
+      const month = mRaw === 'Sep' ? 'Sept' : mRaw;
+      xl.push({ i, label: `${dd.getDate()} ${month}` });
+    }
+    if (!xl.find(x => x.i === n - 1)) {
+      const dd = parseD(sl[n - 1].d);
+      const mRaw = dd.toLocaleDateString('en-GB', { month: 'short' });
+      const month = mRaw === 'Sep' ? 'Sept' : mRaw;
+      xl.push({ i: n - 1, label: `${dd.getDate()} ${month}` });
+    }
+  }
+
+  c.fillStyle  = 'rgba(255,255,255,0.45)';
+  c.textAlign  = 'center';
+  c.font       = '11.5px -apple-system,sans-serif';
+  xl.forEach(({i, label}) => c.fillText(label, xOf(i), H-PB+20));
+}
+
+// =============================================================================
+// RENDER INSIGHTS & MULTI-HORIZON CHANGES
+// =============================================================================
+function renderInsights(full) {
+  if (!full.length || appMode === 'calories') return;
+  const latest = full[full.length - 1];
+
+  if (appMode === 'expenditure') {
+    document.getElementById('expCurrentNum').textContent = latest.e.toLocaleString();
+
+    const isUpd = latest.state === 'UPDATING';
+    const strategyName = isUpd ? 'Updating' : 'Holding';
+    document.getElementById('expStrategyNum').textContent = strategyName;
+    document.getElementById('expStrategyDesc').textContent = isUpd
+      ? 'Updating actively refines your expenditure estimate based on consistent daily nutrition logs and scale weight trends.'
+      : 'Holding safeguards your expenditure estimate against insufficient data. Updating requires at least 3 days of nutrition data and 1 day of weight data per 7-day period.';
+
+    const horizons = [
+      { key: '3d',  days: 3  },
+      { key: '7d',  days: 7  },
+      { key: '14d', days: 14 },
+      { key: '30d', days: 30 },
+      { key: '90d', days: 90 }
+    ];
+
+    horizons.forEach(({ key, days }) => {
+      const valEl   = document.getElementById('wcv' + key);
+      const badgeEl = document.getElementById('wcb' + key);
+
+      if (full.length < days || days === 90) {
+        valEl.textContent = '-- kcal';
+        badgeEl.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="7" fill="#fa6b4a"/>
+            <rect x="5.5" y="4.5" width="1.8" height="7" rx="0.9" fill="#1c1c1e"/>
+            <rect x="8.7" y="4.5" width="1.8" height="7" rx="0.9" fill="#1c1c1e"/>
+          </svg>
+          <span class="wc-badge-txt">Waiting</span>`;
+        const sparkSlice = full.slice(Math.max(0, full.length - 35));
+        drawAreaSparkline('wc' + key, sparkSlice.map(d => d.e), true);
+        return;
+      }
+
+      const slice = full.slice(Math.max(0, full.length - days));
+      const delta = slice[slice.length - 1].e - slice[0].e;
+
+      if (delta < 0) {
+        valEl.textContent = `${delta} kcal`;
+        badgeEl.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M4 4L12 12M12 12H6M12 12V6" stroke="#fa6b4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="wc-badge-txt">Decrease</span>`;
+      } else if (delta > 0) {
+        valEl.textContent = `${delta} kcal`;
+        badgeEl.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M4 12L12 4M12 4H6M12 4V10" stroke="#fa6b4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="wc-badge-txt">Increase</span>`;
+      } else {
+        valEl.textContent = `0 kcal`;
+        badgeEl.innerHTML = `
+          <span style="color:var(--coral);font-weight:700">→</span>
+          <span class="wc-badge-txt">Stable</span>`;
+      }
+
+      drawAreaSparkline('wc' + key, slice.map(d => d.e), true);
+    });
+
+  } else if (appMode === 'weight') {
+    // WEIGHT MODE INSIGHTS
+    document.getElementById('ins2Card1Val').textContent   = fmt(latest.t);
+    document.getElementById('ins2Card1Unit').textContent  = U();
+
+    const wkRateKg = latest.v * 7;
+    document.getElementById('ins2Card2Val').textContent   = cvt(wkRateKg).toFixed(2);
+    document.getElementById('ins2Card2Unit').textContent  = U() + ' per week';
+
+    const dailyKcal = Math.round(latest.v * 7700);
+    document.getElementById('ins2Card3Val').textContent   = dailyKcal;
+
+    const proj30 = latest.t + latest.v * 30;
+    document.getElementById('ins2Card4Val').textContent   = fmt(proj30);
+    document.getElementById('ins2Card4Unit').textContent  = U();
+
+    const wtHorizons = ['3d', '7d', '14d', '30d', '90d'];
+    const daysMap = { '3d':3, '7d':7, '14d':14, '30d':30, '90d':90 };
+
+    wtHorizons.forEach(k => {
+      const days = daysMap[k];
+      const valEl = document.getElementById('wtVal' + k);
+      const bEl   = document.getElementById('wtBadge' + k);
+      if (full.length < days) {
+        valEl.textContent = '— ' + U();
+        bEl.textContent = 'Waiting';
+        return;
+      }
+      const sl = full.slice(Math.max(0, full.length - days));
+      const delta = sl[sl.length - 1].t - sl[0].t;
+      const sign = delta >= 0.05 ? '+' : delta <= -0.05 ? '−' : '';
+      valEl.textContent = `${sign}${cvt(Math.abs(delta)).toFixed(1)} ${U()}`;
+      bEl.textContent = delta >= 0.05 ? '↗ Increase' : (delta <= -0.05 ? '↘ Decrease' : '→ Stable');
+      drawAreaSparkline('wtSpark' + k, sl.map(d => cvt(d.t)), false);
+    });
+  }
+}
+
+// =============================================================================
+// RENDER GROUPED HISTORY LIST (Image 1 - Expenditure Mode)
+// =============================================================================
+function renderHistoryList(full) {
+  const container = document.getElementById('expHistoryWrap');
+  if (!container) return;
+
+  if (appMode !== 'expenditure') {
+    container.innerHTML = '';
+    return;
+  }
+
+  const reversed = [...full].reverse();
+  const groups = {};
+  reversed.forEach(item => {
+    const m = fmtMonthYear(item.d);
+    if (!groups[m]) groups[m] = [];
+    groups[m].push(item);
+  });
+
+  let html = '';
+  for (const monthYear in groups) {
+    html += `
+    <div class="exp-month-group">
+      <div class="exp-month-title">${monthYear}</div>
+      <div class="exp-month-card">`;
+
+    groups[monthYear].forEach(d => {
+      const shiftVal = d.de;
+      const sign = shiftVal > 0 ? '+' : '';
+      const shiftStr = `${sign}${shiftVal} kcal`;
+
+      html += `
+        <div class="exp-day-row">
+          <div class="exp-day-left">
+            <span class="exp-day-val">${d.e.toLocaleString()} kcal</span>
+            <span class="exp-day-date">${fmtDayFull(d.d)}</span>
+          </div>
+          <div class="exp-day-right">
+            <span class="exp-shift-dot"></span>
+            <span class="exp-shift-txt">${shiftStr}</span>
+          </div>
+        </div>`;
+    });
+
+    html += `
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// =============================================================================
+// RENDER CALORIE HISTORY SECTION (Separate Section - Calories Mode)
+// =============================================================================
+function renderCalorieSection(full) {
+  const container = document.getElementById('calHistoryList');
+  if (!container || appMode !== 'calories') return;
+
+  // Stats
+  const validDays = full.filter(d => isValidIntakeDay(d));
+  const totalCals = validDays.reduce((acc, d) => acc + (d.fast ? 0 : (d.c || 0)), 0);
+  const avgCals   = validDays.length ? Math.round(totalCals / validDays.length) : 0;
+  const fastDays  = full.filter(d => d.fast).length;
+
+  document.getElementById('calAvgVal').innerHTML = `${avgCals.toLocaleString()} <small>kcal</small>`;
+  document.getElementById('calRangeSub').textContent = full.length ? fmtRange(full[0].d, full[full.length - 1].d) : '—';
+  document.getElementById('calLoggedVal').innerHTML = `${validDays.length} <small style="font-size:15px">/ ${full.length} days</small>`;
+  document.getElementById('calFastingSub').textContent = `${fastDays} fasting days`;
+
+  // Group by Month/Year
+  const reversed = [...full].reverse();
+  const groups = {};
+  reversed.forEach(item => {
+    const m = fmtMonthYear(item.d);
+    if (!groups[m]) groups[m] = [];
+    groups[m].push(item);
+  });
+
+  let html = '';
+  for (const monthYear in groups) {
+    const monthItems = groups[monthYear];
+    html += `
+    <div class="exp-month-group">
+      <div class="exp-month-title">${monthYear}</div>
+      <div class="exp-month-card">`;
+
+    monthItems.forEach(d => {
+      let calDisplay = '';
+      if (d.fast) {
+        calDisplay = `<span style="color:var(--coral);font-weight:600">0 kcal (Fast)</span>`;
+      } else if (d.calLogged && d.c != null) {
+        calDisplay = `<span style="color:#fff;font-weight:700">${d.c.toLocaleString()} kcal</span>`;
+      } else {
+        calDisplay = `<span style="color:var(--mu);font-weight:400">Unlogged</span>`;
+      }
+
+      const delBtn = (d.calLogged || d.fast)
+        ? `<button class="xbtn" onclick="deleteCalorieEntry('${d.d}')" title="Delete calorie entry">×</button>`
+        : '';
+
+      html += `
+        <div class="exp-day-row">
+          <div class="exp-day-left">
+            <span class="exp-day-val">${calDisplay}</span>
+            <span class="exp-day-date">${fmtDayFull(d.d)}</span>
+          </div>
+          <div class="exp-day-right">
+            ${delBtn}
+          </div>
+        </div>`;
+    });
+
+    html += `
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// =============================================================================
+// MAIN RENDER ORCHESTRATOR
+// =============================================================================
+function setMode(mode) {
+  appMode = mode;
+  document.getElementById('modeWtBtn').className  = mode === 'weight' ? 'mbtn active-wt' : 'mbtn';
+  document.getElementById('modeExpBtn').className = mode === 'expenditure' ? 'mbtn active-exp' : 'mbtn';
+  document.getElementById('modeCalBtn').className = mode === 'calories' ? 'mbtn active-cal' : 'mbtn';
+
+  const titles = {
+    weight: 'Weight Trend',
+    expenditure: 'Expenditure',
+    calories: 'Calories & Nutrition'
+  };
+  document.getElementById('pageTitle').textContent = titles[mode] || 'Dashboard';
+
+  // Toggle Section Visibility
+  document.getElementById('mainCard').style.display        = mode === 'calories' ? 'none' : 'block';
+  document.getElementById('chartLegend').style.display     = mode === 'weight' ? 'flex' : 'none';
+  document.getElementById('insightsTitle').style.display   = mode === 'calories' ? 'none' : 'block';
+  document.getElementById('expInsightsWrap').style.display = mode === 'expenditure' ? 'block' : 'none';
+  document.getElementById('wtInsightsWrap').style.display  = mode === 'weight' ? 'block' : 'none';
+  document.getElementById('expHistoryWrap').style.display  = mode === 'expenditure' ? 'block' : 'none';
+  document.getElementById('wtInputSec').style.display      = mode === 'weight' ? 'block' : 'none';
+  document.getElementById('wtTableWrap').style.display     = mode === 'weight' ? 'block' : 'none';
+  document.getElementById('calSectionWrap').style.display  = mode === 'calories' ? 'block' : 'none';
+
+  render();
+}
+
+function render() {
+  const full = buildFullData();
+  const sl   = getSlice(full);
+  const st   = calcStats(sl);
+
+  if (appMode === 'expenditure') {
+    document.getElementById('kLeftLbl').textContent  = 'Average';
+    document.getElementById('kRightLbl').textContent = 'Difference';
+
+    const avgVal = Math.round(st.avg);
+    document.getElementById('kAvg').innerHTML = `${avgVal.toLocaleString()} <small>kcal</small>`;
+    document.getElementById('kRange').textContent = st.s ? fmtRange(st.s, st.e) : '—';
+
+    const de = st.diff;
+    const sign = de > 0 ? '+' : (de < 0 ? '−' : '');
+    document.getElementById('kDiff').innerHTML = `${sign}${Math.abs(de)} <small>kcal</small>`;
+
+    document.getElementById('unitBtn').className = 'ubtn white-circle';
+    document.getElementById('unitBtn').title = 'Toggle Flux Corridor';
+  } else if (appMode === 'weight') {
+    document.getElementById('kLeftLbl').textContent  = 'Average';
+    document.getElementById('kRightLbl').textContent = 'Difference';
+
+    document.getElementById('kAvg').innerHTML =
+      sl.length ? `${fmt(st.avg)} <small>${U()}</small>` : `— <small>${U()}</small>`;
+    document.getElementById('kRange').textContent = st.s ? fmtRange(st.s, st.e) : '—';
+
+    const sign = st.diff >= 0.05 ? '+' : st.diff <= -0.05 ? '−' : '';
+    const diffVal = Math.abs(st.diff || 0) < 0.05 ? 0 : Math.abs(st.diff);
+    document.getElementById('kDiff').innerHTML = sl.length
+      ? `${sign}${fmt(diffVal)} <small>${U()}</small>`
+      : '—';
+
+    document.getElementById('unitBtn').className = 'ubtn';
+    document.getElementById('unitBtn').title = 'Toggle kg / lbs';
+  }
+
+  // Draw Chart for Weight or Expenditure
+  if (appMode !== 'calories') {
+    drawChart(sl);
+  }
+
+  // Render Insights
+  renderInsights(full);
+
+  // Render Expenditure History List (Image 1)
+  renderHistoryList(full);
+
+  // Render Calorie Section History
+  renderCalorieSection(full);
+
+  // Render Weight Mode Table (Clean: Scale & Trend Weight ONLY - No TDEE, No Shift, No Status)
+  if (appMode === 'weight') {
+    const allDaysDesc = [...full].reverse();
+    document.getElementById('logBody').innerHTML = allDaysDesc.length
+      ? allDaysDesc.map((d, idx) => {
+          const scaleCell = d.logged
+            ? `${fmt(d.w)} ${U()}`
+            : `<span style="color:var(--mu)">— <span class="sub-val">(${fmt(d.w)})</span></span>`;
+
+          const prevTrend = idx < allDaysDesc.length - 1 ? allDaysDesc[idx + 1].t : d.t;
+          const trendShift = d.t - prevTrend;
+          const shiftSign = trendShift > 0.04 ? '+' : (trendShift < -0.04 ? '−' : '');
+          const shiftCell = Math.abs(trendShift) < 0.04
+            ? `<span style="color:var(--mu)">0.0 ${U()}</span>`
+            : `<span style="color:${trendShift < 0 ? 'var(--pu)' : '#f87171'}">${shiftSign}${fmt(Math.abs(trendShift))} ${U()}</span>`;
+
+          const actionCell = d.logged
+            ? `<button class="xbtn" onclick="deleteWeightEntry('${d.d}')" title="Delete scale entry">×</button>`
+            : '';
+
+          return `
+          <tr class="${d.logged ? '' : 'unlogged'}">
+            <td>${d.d}</td>
+            <td>${scaleCell}</td>
+            <td class="col-trend">${fmt(d.t)} ${U()}</td>
+            <td>${shiftCell}</td>
+            <td>${actionCell}</td>
+          </tr>`;
+        }).join('')
+      : '<tr class="noentry"><td colspan="5">No scale weigh-in entries found.</td></tr>';
+  }
+}
+
+// =============================================================================
+// ACTIONS & LOGGING
+// =============================================================================
+
+// 1. ADD ONLY WEIGHT LOGS (In Weight Trend Section)
+function addWeightOnlyEntry() {
+  const date = document.getElementById('inWtDate').value;
+  const wRaw = parseFloat(document.getElementById('inWtVal').value);
+
+  if (!date) { alert('Please select a date.'); return; }
+  if (isNaN(wRaw) || wRaw <= 0) {
+    alert('Please enter a valid weight.');
+    return;
+  }
+
+  const wVal = unit === 'lbs' ? wRaw / 2.20462 : wRaw;
+  const ex = rawData.findIndex(e => e.d === date);
+  if (ex >= 0) {
+    rawData[ex].w = wVal;
+  } else {
+    rawData.push({ d: date, w: wVal, c: null, fast: false });
+    rawData.sort((a,b) => a.d < b.d ? -1 : 1);
+  }
+
+  saveLogs();
+  document.getElementById('inWtVal').value = '';
+  render();
+}
+
+// 2. ADD WEIGHT & CALORIES TOGETHER (In Separate Calories Section)
+function addCombinedEntry() {
+  const date   = document.getElementById('inCombDate').value;
+  const wRaw   = parseFloat(document.getElementById('inCombWt').value);
+  const cRaw   = parseFloat(document.getElementById('inCombCal').value);
+  const isFast = document.getElementById('inCombFast').checked;
+
+  if (!date) { alert('Please select a date.'); return; }
+  const hasW = !isNaN(wRaw) && wRaw > 0;
+  const hasC = (!isNaN(cRaw) && cRaw >= 0) || isFast;
+
+  if (!hasW && !hasC) {
+    alert('Please enter a valid weight, calorie intake, or check Fast.');
+    return;
+  }
+
+  const wVal = hasW ? (unit === 'lbs' ? wRaw / 2.20462 : wRaw) : null;
+  const cVal = isFast ? 0 : (hasC ? Math.round(cRaw) : null);
+
+  const ex = rawData.findIndex(e => e.d === date);
+  if (ex >= 0) {
+    if (hasW) rawData[ex].w = wVal;
+    if (hasC) {
+      rawData[ex].c = cVal;
+      rawData[ex].fast = isFast;
+    }
+  } else {
+    rawData.push({ d: date, w: wVal, c: cVal, fast: isFast });
+    rawData.sort((a,b) => a.d < b.d ? -1 : 1);
+  }
+
+  saveLogs();
+  document.getElementById('inCombWt').value  = '';
+  document.getElementById('inCombCal').value = '';
+  document.getElementById('inCombFast').checked = false;
+  render();
+}
+
+// DELETION HANDLERS
+function deleteWeightEntry(date) {
+  const ex = rawData.findIndex(e => e.d === date);
+  if (ex >= 0) {
+    rawData[ex].w = null;
+    if (rawData[ex].c == null && !rawData[ex].fast) {
+      rawData.splice(ex, 1);
+    }
+  }
+  saveLogs();
+  render();
+}
+
+function deleteCalorieEntry(date) {
+  const ex = rawData.findIndex(e => e.d === date);
+  if (ex >= 0) {
+    rawData[ex].c = null;
+    rawData[ex].fast = false;
+    if (rawData[ex].w == null) {
+      rawData.splice(ex, 1);
+    }
+  }
+  saveLogs();
+  render();
+}
+
+// =============================================================================
+// EVENTS & INITIALIZATION
+// =============================================================================
+document.querySelectorAll('.tf').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tf').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    selDays = parseInt(btn.dataset.days);
+    render();
+  });
+});
+
+document.getElementById('unitBtn').addEventListener('click', () => {
+  if (appMode === 'weight') {
+    unit = unit === 'kg' ? 'lbs' : 'kg';
+    document.getElementById('inWtVal').placeholder = `Weight (${unit})`;
+    document.getElementById('inCombWt').placeholder = `Weight (${unit})`;
+  } else {
+    showCorridor = !showCorridor;
+  }
+  render();
+});
+
+document.getElementById('dBtn').addEventListener('click', () => {
+  showCorridor = !showCorridor;
+  render();
+});
+
+// Initial Setup
+loadLogs();
+document.getElementById('inWtDate').value   = '2026-10-18';
+document.getElementById('inCombDate').value = '2026-10-18';
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(render, 80);
+});
+
+render();
+</script>
+</body>
+</html>
