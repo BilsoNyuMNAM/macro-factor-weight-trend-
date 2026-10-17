@@ -35,7 +35,6 @@ body{
 
 /* KPI row */
 .kpi{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 18px 0;gap:8px}
-.kpi-g{}
 .kpi-lbl{font-size:13px;color:var(--mu);margin-bottom:2px}
 .kpi-val{font-size:32px;font-weight:700;letter-spacing:-1.2px;line-height:1;margin-bottom:4px}
 .kpi-val small{font-size:17px;font-weight:400;letter-spacing:0}
@@ -70,28 +69,45 @@ body{
   background:var(--pud);transform:translateY(-50%);border-radius:2px}
 .lc{width:10px;height:10px;border-radius:50%;border:2px solid var(--pu);background:var(--bg)}
 
-/* Insights & Changes section */
-.igrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-.icard{background:var(--lift);border-radius:14px;padding:12px 13px}
-.ilbl{font-size:11px;color:var(--mu);font-weight:500;margin-bottom:4px}
-.ival{font-size:21px;font-weight:700;letter-spacing:-.6px;line-height:1.1;margin-bottom:4px}
-.ival small{font-size:13px;font-weight:400;color:var(--mu);letter-spacing:0}
-.isub{font-size:11px;color:var(--mu);line-height:1.25}
+/* Insights & Changes layout */
+.stat-list{display:flex;flex-direction:column;}
+.stat-row{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--br);}
+.stat-row:last-child{border-bottom:none;}
+.stat-box{
+  background:var(--lift);border-radius:14px;
+  width:130px;min-width:130px;height:100px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;padding:10px 12px;
+}
+.stat-num{
+  font-size:30px;font-weight:700;letter-spacing:-1.2px;
+  color:var(--tx);line-height:1;text-align:center;
+  white-space:nowrap;
+}
+.stat-unit-lbl{font-size:11px;color:var(--mu);margin-top:5px;text-align:center;}
+.stat-info{flex:1;min-width:0;}
+.stat-title{font-size:15px;font-weight:600;color:var(--tx);margin-bottom:5px;letter-spacing:-.2px;}
+.stat-desc{font-size:12.5px;color:var(--mu);line-height:1.45;}
 
-.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.ccard{background:var(--lift);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between}
-.ctop{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.clbl{font-size:11px;font-weight:600;color:var(--mu)}
-.cbadge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.06);color:var(--mu)}
-.cbadge.up{color:#d8b4fe;background:rgba(148,121,212,.16)}
-.cbadge.dn{color:#6ee7b7;background:rgba(16,185,129,.14)}
-.cval{font-size:17px;font-weight:700;letter-spacing:-.4px;margin-bottom:6px}
-.cval small{font-size:11px;font-weight:400;color:var(--mu)}
-.spark{width:100%;height:26px;display:block}
+/* Weight Changes list */
+.wc-list{display:flex;flex-direction:column;}
+.wc-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--br);}
+.wc-row:last-child{border-bottom:none;}
+.wc-lbl{font-size:14px;color:var(--mu);width:48px;flex-shrink:0;}
+.wc-spark{height:36px;flex:1;display:block;min-width:0;}
+.wc-val{font-size:14px;font-weight:600;color:var(--tx);width:72px;text-align:right;flex-shrink:0;letter-spacing:-.3px;}
+.wc-badge{font-size:13px;display:flex;align-items:center;gap:5px;width:100px;flex-shrink:0;color:var(--mu);}
+.wc-badge.dn{color:var(--pu);}
+.wc-badge.up{color:#f87171;}
+.wc-badge.stable{color:var(--mu);}
+.wc-badge.wait{color:var(--mu);}
 
 @media (max-width:560px){
-  .igrid{grid-template-columns:1fr}
-  .cgrid{grid-template-columns:repeat(2,1fr)}
+  .stat-box{width:102px;min-width:102px;height:86px;}
+  .stat-num{font-size:23px;}
+  .stat-desc{font-size:11.5px;}
+  .wc-val{width:60px;font-size:13px;}
+  .wc-badge{width:84px;font-size:12px;}
 }
 
 /* Add section */
@@ -174,46 +190,82 @@ table.logt tr:hover td{background:rgba(255,255,255,.025)}
 
 <!-- INSIGHTS & MULTI-DAY CHANGES SECTION -->
 <div class="sec">
-  <div class="stitle">Insights &amp; Rate of Change</div>
-  <div class="igrid">
-    <div class="icard">
-      <div class="ilbl">Current Trend</div>
-      <div class="ival" id="insTrend" style="color:var(--pu)">—</div>
-      <div class="isub" id="insBand">Noise Band: —</div>
+  <div class="stitle" style="font-size:16px;font-weight:700;color:var(--tx);text-transform:none;letter-spacing:-.3px;margin-bottom:16px">Insights &amp; Data</div>
+
+  <div class="stat-list">
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-num" id="ins2CurWeight">—</div>
+        <div class="stat-unit-lbl" id="ins2CurUnit">kg</div>
+      </div>
+      <div class="stat-info">
+        <div class="stat-title">Current Weight</div>
+        <div class="stat-desc">Our estimate of your true weight after smoothing out day-to-day fluctuations.</div>
+      </div>
     </div>
-    <div class="icard">
-      <div class="ilbl">Current Scale</div>
-      <div class="ival" id="insScale">—</div>
-      <div class="isub" id="insScaleSub">—</div>
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-num" id="ins2Weekly">—</div>
+        <div class="stat-unit-lbl" id="ins2WeeklyUnit">kg per week</div>
+      </div>
+      <div class="stat-info">
+        <div class="stat-title">Weekly Weight Change</div>
+        <div class="stat-desc">Your typical weekly rate of weight loss over the past three weeks.</div>
+      </div>
     </div>
-    <div class="icard">
-      <div class="ilbl">Weekly Change Rate</div>
-      <div class="ival" id="insWeekly">—</div>
-      <div class="isub" id="insVel">Velocity: —</div>
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-num" id="ins2Deficit">—</div>
+        <div class="stat-unit-lbl">kcal per day</div>
+      </div>
+      <div class="stat-info">
+        <div class="stat-title">Energy Deficit</div>
+        <div class="stat-desc">Our estimate of your average daily caloric deficit, based on your rate of weight loss over the past three weeks.</div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-num" id="ins2Proj">—</div>
+        <div class="stat-unit-lbl" id="ins2ProjUnit">kg</div>
+      </div>
+      <div class="stat-info">
+        <div class="stat-title">30-Day Projection</div>
+        <div class="stat-desc">Your projected weight in 30 days if your current rate of weight loss is met.</div>
+      </div>
     </div>
   </div>
 
-  <div class="stitle" style="margin-top:4px;margin-bottom:10px">Period Changes</div>
-  <div class="cgrid">
-    <div class="ccard">
-      <div class="ctop"><span class="clbl">3 Days</span><span class="cbadge" id="b3d">—</span></div>
-      <div class="cval" id="v3d">—</div>
-      <canvas class="spark" id="sp3d"></canvas>
+  <div class="stitle" style="margin-top:20px;margin-bottom:10px">Weight Changes</div>
+  <div class="wc-list">
+    <div class="wc-row">
+      <span class="wc-lbl">3-day</span>
+      <canvas class="wc-spark" id="wc3d"></canvas>
+      <span class="wc-val" id="wcv3d">—</span>
+      <span class="wc-badge" id="wcb3d">—</span>
     </div>
-    <div class="ccard">
-      <div class="ctop"><span class="clbl">7 Days</span><span class="cbadge" id="b7d">—</span></div>
-      <div class="cval" id="v7d">—</div>
-      <canvas class="spark" id="sp7d"></canvas>
+    <div class="wc-row">
+      <span class="wc-lbl">7-day</span>
+      <canvas class="wc-spark" id="wc7d"></canvas>
+      <span class="wc-val" id="wcv7d">—</span>
+      <span class="wc-badge" id="wcb7d">—</span>
     </div>
-    <div class="ccard">
-      <div class="ctop"><span class="clbl">14 Days</span><span class="cbadge" id="b14d">—</span></div>
-      <div class="cval" id="v14d">—</div>
-      <canvas class="spark" id="sp14d"></canvas>
+    <div class="wc-row">
+      <span class="wc-lbl">14-day</span>
+      <canvas class="wc-spark" id="wc14d"></canvas>
+      <span class="wc-val" id="wcv14d">—</span>
+      <span class="wc-badge" id="wcb14d">—</span>
     </div>
-    <div class="ccard">
-      <div class="ctop"><span class="clbl">30 Days</span><span class="cbadge" id="b30d">—</span></div>
-      <div class="cval" id="v30d">—</div>
-      <canvas class="spark" id="sp30d"></canvas>
+    <div class="wc-row">
+      <span class="wc-lbl">30-day</span>
+      <canvas class="wc-spark" id="wc30d"></canvas>
+      <span class="wc-val" id="wcv30d">—</span>
+      <span class="wc-badge" id="wcb30d">—</span>
+    </div>
+    <div class="wc-row">
+      <span class="wc-lbl">90-day</span>
+      <canvas class="wc-spark" id="wc90d"></canvas>
+      <span class="wc-val" id="wcv90d">—</span>
+      <span class="wc-badge" id="wcb90d">—</span>
     </div>
   </div>
 </div>
@@ -298,9 +350,6 @@ const TFL = {
 };
 
 // ── PIPELINE ─────────────────────────────────────────────────────────────────
-// Pass 1 — gap fill + trailing hold
-// Pass 2 — OLS linear regression cold start (K<=8) + EMA α=0.10 + Velocity + Noise Band
-
 function buildFullData() {
   const sorted = [...rawData].sort((a,b) => a.d < b.d ? -1 : 1);
   if (!sorted.length) return [];
@@ -330,7 +379,6 @@ function buildFullData() {
     if (gap <= 1) continue;
     const ws=days[si].w, we=days[ei].w;
     for (let j=si+1; j<ei; j++) {
-      // linear interp if gap <= 7 missing days (ei - si <= 8), flat hold otherwise
       days[j].w      = gap <= 8 ? ws + (we-ws)/gap*(j-si) : ws;
       days[j].interp = gap <= 8;
       days[j].hold   = gap > 8;
@@ -373,22 +421,31 @@ function buildFullData() {
       days[i].t = days[i-1].t;
     } else {
       currentTrend = 0.1 * days[i].w + 0.9 * currentTrend;
-      days[i].t = currentTrend; // keep full precision, do NOT Math.round(* 100)/100
+      days[i].t = currentTrend; // keep full precision
     }
   }
 
-  // Step 3 (Velocity & Decay) & Step 4 (Rolling 14-Day Residual RMSE Noise Band)
+  // Step 3: Trailing 3-Week (20-day) OLS Linear Regression Slope for Typical Rate
   for (let i = 0; i < days.length; i++) {
-    // Velocity (kg/day)
     if (i === 0) {
       days[i].v = 0;
     } else if (i - lastI >= 2) {
-      let decayed = Math.round(days[i-1].v * 0.70 * 1000) / 1000;
+      let decayed = days[i-1].v * 0.70;
       if (Math.abs(decayed) < 0.005) decayed = 0;
       days[i].v = decayed;
     } else {
-      const k = Math.min(i, 7);
-      days[i].v = Math.round(((days[i].t - days[i-k].t) / k) * 1000) / 1000;
+      const win = Math.min(i + 1, 20); // trailing 3-week window (20 calendar days)
+      const start = i - win + 1;
+      let sX = 0, sY = 0, sXY = 0, sXX = 0;
+      for (let j = 0; j < win; j++) {
+        const y = days[start + j].t;
+        sX += j;
+        sY += y;
+        sXY += j * y;
+        sXX += j * j;
+      }
+      const denom = win * sXX - sX * sX;
+      days[i].v = denom !== 0 ? (win * sXY - sX * sY) / denom : 0;
     }
 
     // 14-Day Residual RMSE Noise Band
@@ -426,38 +483,46 @@ function calcStats(sl) {
   };
 }
 
-// ── SPARKLINE HELPER ─────────────────────────────────────────────────────────
-function drawSparkline(canvasId, pts) {
+// ── AREA SPARKLINE ───────────────────────────────────────────────────────────
+function drawAreaSparkline(canvasId, pts) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const dpr = window.devicePixelRatio || 1;
-  const W = canvas.clientWidth || 120;
-  const H = canvas.clientHeight || 26;
-  canvas.width = W * dpr;
+  const W   = canvas.clientWidth  || 160;
+  const H   = canvas.clientHeight || 36;
+  canvas.width  = W * dpr;
   canvas.height = H * dpr;
   const c = canvas.getContext('2d');
   c.scale(dpr, dpr);
   c.clearRect(0, 0, W, H);
   if (pts.length < 2) return;
 
-  const lo = Math.min(...pts), hi = Math.max(...pts);
+  const lo   = Math.min(...pts), hi = Math.max(...pts);
   const span = hi - lo || 0.2;
-  const pad = 3;
-  const xOf = i => pad + (i / (pts.length - 1)) * (W - pad * 2);
-  const yOf = v => pad + (1 - (v - lo) / span) * (H - pad * 2);
+  const padX = 2, padY = 3;
+  const xOf  = i => padX + (i / (pts.length - 1)) * (W - padX * 2);
+  const yOf  = v => padY + (1 - (v - lo) / span) * (H - padY * 2 - 1);
 
+  // filled area
+  c.beginPath();
+  c.moveTo(xOf(0), H - padY);
+  for (let i = 0; i < pts.length; i++) c.lineTo(xOf(i), yOf(pts[i]));
+  c.lineTo(xOf(pts.length - 1), H - padY);
+  c.closePath();
+  const grad = c.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(90,55,160,0.52)');
+  grad.addColorStop(1, 'rgba(90,55,160,0.04)');
+  c.fillStyle = grad;
+  c.fill();
+
+  // line on top
   c.beginPath();
   c.moveTo(xOf(0), yOf(pts[0]));
   for (let i = 1; i < pts.length; i++) c.lineTo(xOf(i), yOf(pts[i]));
   c.strokeStyle = '#9479d4';
-  c.lineWidth = 1.8;
+  c.lineWidth   = 1.8;
+  c.lineJoin    = 'round';
   c.stroke();
-
-  const lx = xOf(pts.length - 1), ly = yOf(pts[pts.length - 1]);
-  c.beginPath();
-  c.arc(lx, ly, 2.5, 0, Math.PI * 2);
-  c.fillStyle = '#9479d4';
-  c.fill();
 }
 
 // ── CHART ────────────────────────────────────────────────────────────────────
@@ -477,11 +542,9 @@ function drawChart(sl) {
   const PL=10, PR=46, PT=10, PB=32;
   const CW=W-PL-PR, CH=H-PT-PB;
 
-  // convert values to display unit
   const sw = sl.map(d => cvt(d.w));
   const tw = sl.map(d => cvt(d.t));
 
-  // y-axis range
   const allV = [...sw, ...tw];
   const lo = Math.min(...allV), hi = Math.max(...allV);
   const span = hi - lo || 1;
@@ -512,7 +575,7 @@ function drawChart(sl) {
     g = Math.round((g + gStep) * 1000) / 1000;
   }
 
-  // scale weight line (dashed across interpolated/unlogged segments, solid on logged)
+  // scale weight line
   if (showScale) {
     c.beginPath();
     c.moveTo(xOf(0), yOf(sw[0]));
@@ -530,7 +593,7 @@ function drawChart(sl) {
   c.lineWidth   = 2.5;
   c.stroke();
 
-  // dots on trend for every day (solid ring for logged, smaller/subtle for unlogged)
+  // dots on trend
   for (let i=0; i<sl.length; i++) {
     const x = xOf(i), y = yOf(tw[i]);
     const isLogged = sl[i].logged;
@@ -589,60 +652,76 @@ function drawChart(sl) {
 // ── RENDER INSIGHTS ──────────────────────────────────────────────────────────
 function renderInsights(full) {
   if (!full.length) {
-    document.getElementById('insTrend').innerHTML = '—';
-    document.getElementById('insBand').textContent = 'Noise Band: —';
-    document.getElementById('insScale').innerHTML = '—';
-    document.getElementById('insScaleSub').textContent = '—';
-    document.getElementById('insWeekly').innerHTML = '—';
-    document.getElementById('insVel').textContent = 'Velocity: —';
-    ['3d','7d','14d','30d'].forEach(k => {
-      document.getElementById('v'+k).textContent = '—';
-      document.getElementById('b'+k).textContent = '—';
-      document.getElementById('b'+k).className = 'cbadge';
-      drawSparkline('sp'+k, []);
+    ['ins2CurWeight','ins2Weekly','ins2Deficit','ins2Proj'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    ['3d','7d','14d','30d','90d'].forEach(k => {
+      const v = document.getElementById('wcv'+k), b = document.getElementById('wcb'+k);
+      if (v) v.textContent = '—';
+      if (b) { b.textContent = '—'; b.className = 'wc-badge'; }
+      drawAreaSparkline('wc'+k, []);
     });
     return;
   }
 
   const latest = full[full.length - 1];
-  const loggedDays = full.filter(d => d.logged);
-  const lastLogged = loggedDays[loggedDays.length - 1] || latest;
 
-  // 1. Current Trend Weight + 14d Noise Band
-  document.getElementById('insTrend').innerHTML = `${fmt2(latest.t)} <small>${U()}</small>`;
-  document.getElementById('insBand').textContent =
-    `Band: ${fmt(latest.noiseLower)} – ${fmt(latest.noiseUpper)} ${U()} (±${fmt(latest.noiseBand)})`;
+  // 1. Current Weight — trend rounded to 1 decimal
+  document.getElementById('ins2CurWeight').textContent = fmt(latest.t);
+  document.getElementById('ins2CurUnit').textContent   = U();
 
-  // 2. Current Scale Weight
-  document.getElementById('insScale').innerHTML = `${fmt(lastLogged.w)} <small>${U()}</small>`;
-  document.getElementById('insScaleSub').textContent =
-    lastLogged.d === latest.d ? `Logged today (${fmtShort(lastLogged.d)})` : `Last logged ${fmtShort(lastLogged.d)}`;
+  // 2. Weekly Weight Change (3-week regression slope x 7)
+  const wkRateKg  = latest.v * 7;
+  const wkRateFmt = cvt(wkRateKg).toFixed(2);
+  document.getElementById('ins2Weekly').textContent     = wkRateFmt;
+  document.getElementById('ins2WeeklyUnit').textContent = U() + ' per week';
 
-  // 3. Weekly Rate (7-day rate = velocity * 7) & Daily Velocity
-  const wkRate = latest.v * 7;
-  document.getElementById('insWeekly').innerHTML = `${fmtSigned(wkRate, 2)} <small>${U()}/wk</small>`;
-  document.getElementById('insVel').textContent = `Velocity: ${fmtSigned(latest.v, 2)} ${U()}/day`;
+  // 3. Energy Deficit — based on kg velocity
+  //    1 kg body fat ≈ 7700 kcal  →  daily deficit = velocity(kg/day) × 7700
+  const dailyKcal = Math.round(latest.v * 7700);
+  document.getElementById('ins2Deficit').textContent = dailyKcal;
 
-  // 4. Multi-day period change cards (3D, 7D, 14D, 30D)
+  // 4. 30-Day Projection (1 decimal, display unit)
+  const proj30 = latest.t + latest.v * 30;
+  document.getElementById('ins2Proj').textContent     = fmt(proj30);
+  document.getElementById('ins2ProjUnit').textContent = U();
+
+  // 5. Weight Changes rows (3d, 7d, 14d, 30d, 90d)
   const periods = [
-    { key: '3d',  days: 3 },
-    { key: '7d',  days: 7 },
-    { key: '14d', days: 14 },
-    { key: '30d', days: 30 }
+    { key:'3d',  days:3  },
+    { key:'7d',  days:7  },
+    { key:'14d', days:14 },
+    { key:'30d', days:30 },
+    { key:'90d', days:90 }
   ];
 
   periods.forEach(({ key, days }) => {
-    const slice = full.slice(Math.max(0, full.length - days));
-    const delta = slice.length > 1 ? slice[slice.length - 1].t - slice[0].t : 0;
-    const status = delta >= 0.05 ? 'Increase' : delta <= -0.05 ? 'Decrease' : 'Stable';
-    const cls = delta >= 0.05 ? 'cbadge up' : delta <= -0.05 ? 'cbadge dn' : 'cbadge';
+    const hasEnough = full.length >= days;
+    const slice     = full.slice(Math.max(0, full.length - days));
+    const valEl     = document.getElementById('wcv' + key);
+    const badgeEl   = document.getElementById('wcb' + key);
 
-    document.getElementById('v' + key).innerHTML = `${fmtSigned(delta, 1)} <small>${U()}</small>`;
-    const badge = document.getElementById('b' + key);
-    badge.textContent = status;
-    badge.className = cls;
+    if (!hasEnough) {
+      valEl.textContent  = '— ' + U();
+      badgeEl.innerHTML  = '⏸ Waiting';
+      badgeEl.className  = 'wc-badge wait';
+    } else {
+      const delta = slice.length > 1 ? slice[slice.length - 1].t - slice[0].t : 0;
+      valEl.textContent = cvt(delta).toFixed(1) + ' ' + U();
 
-    drawSparkline('sp' + key, slice.map(d => cvt(d.t)));
+      if (delta >= 0.05) {
+        badgeEl.innerHTML = '↗ Increase';
+        badgeEl.className = 'wc-badge up';
+      } else if (delta <= -0.05) {
+        badgeEl.innerHTML = '↘ Decrease';
+        badgeEl.className = 'wc-badge dn';
+      } else {
+        badgeEl.innerHTML = '→ Stable';
+        badgeEl.className = 'wc-badge stable';
+      }
+    }
+
+    drawAreaSparkline('wc' + key, slice.map(d => cvt(d.t)));
   });
 }
 
@@ -677,7 +756,7 @@ function render() {
   dBtn.title        = showScale ? 'Hide Scale Weight' : 'Show Scale Weight';
   dBtn.classList.toggle('muted', !showScale);
 
-  // Log table: display ALL days (including unlogged days with their calculated Trend Weight)
+  // Log table
   const allDaysDesc = [...full].reverse();
   document.getElementById('logBody').innerHTML = allDaysDesc.length
     ? allDaysDesc.map(d => {
@@ -705,7 +784,6 @@ function addEntry() {
   if (!date)               { alert('Please select a date.'); return; }
   if (isNaN(wRaw)||wRaw<=0){ alert('Please enter a valid weight.'); return; }
 
-  // always store internally in kg
   const w = unit === 'lbs' ? wRaw / 2.20462 : wRaw;
   const ex = rawData.findIndex(e => e.d === date);
   if (ex >= 0) rawData[ex].w = w;
@@ -736,7 +814,6 @@ document.getElementById('unitBtn').addEventListener('click', () => {
   render();
 });
 
-// D button: toggle scale weight line visibility
 document.getElementById('dBtn').addEventListener('click', () => {
   showScale = !showScale;
   render();
