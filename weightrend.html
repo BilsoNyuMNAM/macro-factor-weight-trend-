@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weight Trend</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0e;
+  --card:#1c1c1e;
+  --lift:#2c2c2e;
+  --pu:#9479d4;
+  --pud:rgba(90,55,160,0.58);
+  --tx:#fff;
+  --mu:#8e8e93;
+  --br:rgba(255,255,255,0.08);
+}
+body{
+  background:var(--bg);color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  max-width:820px;margin:0 auto;padding-bottom:48px;
+}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 14px}
+.hdr h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.hbtn{background:none;border:none;color:var(--tx);width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;
+  transition:background .15s}
+.hbtn:hover{background:var(--lift)}
+
+/* Main card */
+.mcard{margin:0 14px 10px;background:var(--card);border-radius:22px;overflow:hidden}
+
+/* KPI row */
+.kpi{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 18px 0;gap:8px}
+.kpi-g{}
+.kpi-lbl{font-size:13px;color:var(--mu);margin-bottom:2px}
+.kpi-val{font-size:32px;font-weight:700;letter-spacing:-1.2px;line-height:1;margin-bottom:4px}
+.kpi-val small{font-size:17px;font-weight:400;letter-spacing:0}
+.kpi-sub{font-size:12px;color:var(--mu)}
+.ubtn{background:var(--lift);border:none;color:var(--tx);width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;
+  flex-shrink:0;transition:background .15s}
+.ubtn:hover{background:#3c3c3e}
+
+/* Chart area */
+.cwrap{height:230px;position:relative;padding-top:6px}
+#chart{width:100%;height:100%;display:block}
+
+/* Timeframe row */
+.tfrow{display:flex;align-items:center;padding:6px 10px 14px;gap:2px}
+.tf{flex:1;background:none;border:none;color:var(--mu);font-size:14px;font-weight:500;
+  padding:8px 2px;border-radius:20px;cursor:pointer;transition:all .2s}
+.tf:hover{color:var(--tx)}
+.tf.on{background:var(--tx);color:#000;font-weight:700}
+.dbtn{background:var(--lift);border:none;color:var(--tx);font-size:12px;font-weight:600;
+  padding:7px 10px;border-radius:10px;cursor:pointer;display:flex;align-items:center;
+  gap:3px;flex-shrink:0;margin-left:4px;transition:background .15s;min-width:44px;
+  justify-content:center}
+.dbtn:hover{background:#3a3a3c}
+.dbtn.muted{color:var(--mu)}
+
+/* Legend */
+.legend{display:flex;justify-content:center;gap:20px;padding:2px 0 20px}
+.li{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--mu)}
+.ll{width:24px;height:14px;position:relative}
+.ll::after{content:'';position:absolute;left:0;right:0;top:50%;height:2px;
+  background:var(--pud);transform:translateY(-50%);border-radius:2px}
+.lc{width:10px;height:10px;border-radius:50%;border:2px solid var(--pu);background:var(--bg)}
+
+/* Insights & Changes section */
+.igrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.icard{background:var(--lift);border-radius:14px;padding:12px 13px}
+.ilbl{font-size:11px;color:var(--mu);font-weight:500;margin-bottom:4px}
+.ival{font-size:21px;font-weight:700;letter-spacing:-.6px;line-height:1.1;margin-bottom:4px}
+.ival small{font-size:13px;font-weight:400;color:var(--mu);letter-spacing:0}
+.isub{font-size:11px;color:var(--mu);line-height:1.25}
+
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ccard{background:var(--lift);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between}
+.ctop{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.clbl{font-size:11px;font-weight:600;color:var(--mu)}
+.cbadge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.06);color:var(--mu)}
+.cbadge.up{color:#d8b4fe;background:rgba(148,121,212,.16)}
+.cbadge.dn{color:#6ee7b7;background:rgba(16,185,129,.14)}
+.cval{font-size:17px;font-weight:700;letter-spacing:-.4px;margin-bottom:6px}
+.cval small{font-size:11px;font-weight:400;color:var(--mu)}
+.spark{width:100%;height:26px;display:block}
+
+@media (max-width:560px){
+  .igrid{grid-template-columns:1fr}
+  .cgrid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* Add section */
+.sec{margin:0 14px 10px;background:var(--card);border-radius:18px;padding:16px 18px}
+.stitle{font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:12px}
+.irow{display:flex;gap:8px}
+.irow input{flex:1;background:var(--lift);border:1.5px solid transparent;border-radius:12px;
+  color:var(--tx);font-size:15px;padding:10px 13px;outline:none;transition:border-color .2s;
+  min-width:0}
+.irow input:focus{border-color:var(--pu)}
+.irow input::placeholder{color:var(--mu)}
+.abtn{background:var(--pu);border:none;color:#fff;font-size:15px;font-weight:600;
+  padding:10px 18px;border-radius:12px;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.abtn:hover{opacity:.85}
+
+/* Log table */
+.logwrap{margin:0 14px 24px;background:var(--card);border-radius:18px;overflow:hidden}
+.logtitle{padding:14px 18px 8px;font-size:11px;font-weight:600;color:var(--mu);
+  text-transform:uppercase;letter-spacing:.6px}
+table.logt{width:100%;border-collapse:collapse}
+table.logt th{padding:4px 18px 6px;text-align:left;font-size:11px;color:var(--mu);font-weight:500}
+table.logt th:nth-child(2),table.logt th:nth-child(3){text-align:right}
+table.logt th:last-child{text-align:right;width:40px}
+table.logt td{padding:10px 18px;border-top:1px solid var(--br);font-size:14px}
+table.logt td:nth-child(2),table.logt td:nth-child(3){text-align:right;font-weight:500}
+table.logt td:last-child{text-align:right}
+table.logt td:nth-child(3){color:var(--pu)}
+table.logt tr.unlogged td:first-child{color:var(--mu)}
+table.logt tr:hover td{background:rgba(255,255,255,.025)}
+.sub-val{font-size:11px;color:var(--mu);font-weight:400;margin-left:4px}
+.xbtn{background:none;border:none;color:var(--mu);cursor:pointer;font-size:17px;line-height:1;
+  padding:2px 5px;border-radius:6px;transition:all .15s}
+.xbtn:hover{color:#ff453a;background:rgba(255,69,58,.12)}
+.noentry td{padding:20px;color:var(--mu);text-align:center;font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <button class="hbtn">‹</button>
+  <h1>Weight Trend</h1>
+  <button class="hbtn">🎓</button>
+</div>
+
+<div class="mcard">
+  <div class="kpi">
+    <div class="kpi-g">
+      <div class="kpi-lbl">Average</div>
+      <div class="kpi-val" id="kAvg">— <small>kg</small></div>
+      <div class="kpi-sub" id="kRange">—</div>
+    </div>
+    <div class="kpi-g" style="text-align:right">
+      <div class="kpi-lbl">Difference</div>
+      <div class="kpi-val" id="kDiff" style="font-size:28px">—</div>
+      <div class="kpi-sub" id="kDiffSub">—</div>
+    </div>
+    <button class="ubtn" id="unitBtn" title="Toggle kg / lbs">⇕</button>
+  </div>
+
+  <div class="cwrap">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="tfrow">
+    <button class="tf on" data-days="7">1W</button>
+    <button class="tf" data-days="30">1M</button>
+    <button class="tf" data-days="90">3M</button>
+    <button class="tf" data-days="180">6M</button>
+    <button class="tf" data-days="365">1Y</button>
+    <button class="tf" data-days="0">All</button>
+    <button class="dbtn" id="dBtn">D ▾</button>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="li"><div class="ll"></div><span>Scale Weight</span></div>
+  <div class="li"><div class="lc"></div><span>Trend Weight</span></div>
+</div>
+
+<!-- INSIGHTS & MULTI-DAY CHANGES SECTION -->
+<div class="sec">
+  <div class="stitle">Insights &amp; Rate of Change</div>
+  <div class="igrid">
+    <div class="icard">
+      <div class="ilbl">Current Trend</div>
+      <div class="ival" id="insTrend" style="color:var(--pu)">—</div>
+      <div class="isub" id="insBand">Noise Band: —</div>
+    </div>
+    <div class="icard">
+      <div class="ilbl">Current Scale</div>
+      <div class="ival" id="insScale">—</div>
+      <div class="isub" id="insScaleSub">—</div>
+    </div>
+    <div class="icard">
+      <div class="ilbl">Weekly Change Rate</div>
+      <div class="ival" id="insWeekly">—</div>
+      <div class="isub" id="insVel">Velocity: —</div>
+    </div>
+  </div>
+
+  <div class="stitle" style="margin-top:4px;margin-bottom:10px">Period Changes</div>
+  <div class="cgrid">
+    <div class="ccard">
+      <div class="ctop"><span class="clbl">3 Days</span><span class="cbadge" id="b3d">—</span></div>
+      <div class="cval" id="v3d">—</div>
+      <canvas class="spark" id="sp3d"></canvas>
+    </div>
+    <div class="ccard">
+      <div class="ctop"><span class="clbl">7 Days</span><span class="cbadge" id="b7d">—</span></div>
+      <div class="cval" id="v7d">—</div>
+      <canvas class="spark" id="sp7d"></canvas>
+    </div>
+    <div class="ccard">
+      <div class="ctop"><span class="clbl">14 Days</span><span class="cbadge" id="b14d">—</span></div>
+      <div class="cval" id="v14d">—</div>
+      <canvas class="spark" id="sp14d"></canvas>
+    </div>
+    <div class="ccard">
+      <div class="ctop"><span class="clbl">30 Days</span><span class="cbadge" id="b30d">—</span></div>
+      <div class="cval" id="v30d">—</div>
+      <canvas class="spark" id="sp30d"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="stitle">Log Weigh-In</div>
+  <div class="irow">
+    <input type="date" id="inDate">
+    <input type="number" id="inWt" step="0.1" min="20" max="500" placeholder="Weight (kg)">
+    <button class="abtn" onclick="addEntry()">Add</button>
+  </div>
+</div>
+
+<div class="logwrap">
+  <div class="logtitle">Daily Trend &amp; Scale Log</div>
+  <table class="logt">
+    <thead>
+      <tr><th>Date</th><th>Scale</th><th>Trend</th><th></th></tr>
+    </thead>
+    <tbody id="logBody"></tbody>
+  </table>
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────────
+let rawData = [
+  {d:'2026-09-14',w:81.1},{d:'2026-09-15',w:80.3},
+  {d:'2026-09-16',w:80.5},{d:'2026-09-17',w:81.2},
+  {d:'2026-09-19',w:79.5},{d:'2026-09-20',w:80.2},
+  {d:'2026-09-21',w:80.6},{d:'2026-09-22',w:79.4},
+  {d:'2026-09-23',w:78.7},{d:'2026-09-24',w:79.1},
+  {d:'2026-09-25',w:79.5},{d:'2026-09-26',w:79.1},
+  {d:'2026-09-27',w:79.4},{d:'2026-09-28',w:78.5},
+  {d:'2026-09-30',w:78.8},{d:'2026-10-01',w:78.9},
+  {d:'2026-10-03',w:78.3},{d:'2026-10-07',w:77.8},
+  {d:'2026-10-10',w:77.7},{d:'2026-10-11',w:77.3},
+  {d:'2026-10-13',w:77.8},{d:'2026-10-14',w:77.8},
+  {d:'2026-10-16',w:77.9},{d:'2026-10-17',w:77.9},
+];
+let selDays   = 7;
+let unit      = 'kg';
+let showScale = true;
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+const parseD = s => new Date(s + 'T00:00:00');
+const toStr  = d => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+const today  = () => { const d=new Date(); d.setHours(0,0,0,0); return d; };
+const cvt    = v  => unit === 'lbs' ? v * 2.20462 : v;
+const fmt    = v  => cvt(v).toFixed(1);
+const fmt2   = v  => cvt(v).toFixed(2);
+const U      = () => unit;
+
+function fmtSigned(diff, dec = 1) {
+  const thresh = dec === 2 ? 0.005 : 0.05;
+  const val = cvt(Math.abs(diff || 0) < thresh ? 0 : Math.abs(diff));
+  const sign = diff >= thresh ? '+' : diff <= -thresh ? '−' : '';
+  return `${sign}${val.toFixed(dec)}`;
+}
+
+function fmtRange(s, e) {
+  const sd=parseD(s), ed=parseD(e);
+  const sD=sd.getDate(), eD=ed.getDate();
+  const sM=sd.toLocaleDateString('en-GB',{month:'short'});
+  const eM=ed.toLocaleDateString('en-GB',{month:'short'});
+  const eY=ed.getFullYear();
+  return sd.getMonth()===ed.getMonth() && sd.getFullYear()===ed.getFullYear()
+    ? `${sD} – ${eD} ${eM} ${eY}`
+    : `${sD} ${sM} – ${eD} ${eM} ${eY}`;
+}
+function fmtShort(s) {
+  return parseD(s).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+const TFL = {
+  7:'Across 1W Timeframe', 30:'Across 1M Timeframe',
+  90:'Across 3M Timeframe', 180:'Across 6M Timeframe',
+  365:'Across 1Y Timeframe', 0:'All Time'
+};
+
+// ── PIPELINE ─────────────────────────────────────────────────────────────────
+// Pass 1 — gap fill + trailing hold
+// Pass 2 — OLS linear regression cold start (K<=8) + EMA α=0.10 + Velocity + Noise Band
+
+function buildFullData() {
+  const sorted = [...rawData].sort((a,b) => a.d < b.d ? -1 : 1);
+  if (!sorted.length) return [];
+
+  const first   = parseD(sorted[0].d);
+  const lastLog = parseD(sorted[sorted.length - 1].d);
+  const last    = lastLog > today() ? lastLog : today();
+  const n       = Math.round((last - first) / 86400000) + 1;
+
+  // continuous date array (every single day from Day 0 to Today)
+  const days = Array.from({length: n}, (_, i) => {
+    const d = new Date(first); d.setDate(d.getDate() + i);
+    return { d: toStr(d), w: null, logged: false, interp: false, trail: false };
+  });
+
+  // place logged values
+  const idx = {};
+  days.forEach((x, i) => idx[x.d] = i);
+  sorted.forEach(e => {
+    if (idx[e.d] != null) { days[idx[e.d]].w = e.w; days[idx[e.d]].logged = true; }
+  });
+
+  // gap fill for unlogged days between logged weigh-ins
+  const li = days.reduce((a,d,i) => (d.logged && a.push(i), a), []);
+  for (let k = 0; k < li.length - 1; k++) {
+    const si=li[k], ei=li[k+1], gap=ei-si;
+    if (gap <= 1) continue;
+    const ws=days[si].w, we=days[ei].w;
+    for (let j=si+1; j<ei; j++) {
+      // linear interp if gap <= 7 missing days (ei - si <= 8), flat hold otherwise
+      days[j].w      = gap <= 8 ? ws + (we-ws)/gap*(j-si) : ws;
+      days[j].interp = gap <= 8;
+      days[j].hold   = gap > 8;
+    }
+  }
+
+  // trailing edge hold (last logged -> today)
+  const lastI = li.length > 0 ? li[li.length-1] : 0;
+  if (li.length > 0) {
+    const lastW = days[lastI].w;
+    for (let j = lastI+1; j < days.length; j++) {
+      days[j].w = lastW; days[j].trail = true;
+    }
+  }
+
+  // Pass 2: OLS linear regression cold-start initialization (first K <= 8 days)
+  let currentTrend = days[0].w || 0;
+  if (days.length >= 3) {
+    const K = Math.min(days.length, 8);
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    let minY = days[0].w, maxY = days[0].w;
+    for (let i = 0; i < K; i++) {
+      const yi = days[i].w;
+      sumX += i;
+      sumY += yi;
+      sumXY += i * yi;
+      sumXX += i * i;
+      if (yi < minY) minY = yi;
+      if (yi > maxY) maxY = yi;
+    }
+    const denom = K * sumXX - sumX * sumX;
+    let intercept = denom !== 0 ? (sumY * sumXX - sumX * sumXY) / denom : days[0].w;
+    intercept = Math.max(minY, Math.min(maxY, intercept));
+    currentTrend = intercept;
+  }
+
+  days[0].t = currentTrend;
+  for (let i = 1; i < days.length; i++) {
+    if (i - lastI >= 2) {
+      days[i].t = days[i-1].t;
+    } else {
+      currentTrend = 0.1 * days[i].w + 0.9 * currentTrend;
+      days[i].t = currentTrend; // keep full precision, do NOT Math.round(* 100)/100
+    }
+  }
+
+  // Step 3 (Velocity & Decay) & Step 4 (Rolling 14-Day Residual RMSE Noise Band)
+  for (let i = 0; i < days.length; i++) {
+    // Velocity (kg/day)
+    if (i === 0) {
+      days[i].v = 0;
+    } else if (i - lastI >= 2) {
+      let decayed = Math.round(days[i-1].v * 0.70 * 1000) / 1000;
+      if (Math.abs(decayed) < 0.005) decayed = 0;
+      days[i].v = decayed;
+    } else {
+      const k = Math.min(i, 7);
+      days[i].v = Math.round(((days[i].t - days[i-k].t) / k) * 1000) / 1000;
+    }
+
+    // 14-Day Residual RMSE Noise Band
+    let sqSum = 0, mCount = 0;
+    for (let k = Math.max(0, i - 13); k <= i; k++) {
+      if (days[k].logged) {
+        const diff = days[k].w - days[k].t;
+        sqSum += diff * diff;
+        mCount++;
+      }
+    }
+    const rmse = mCount > 0 ? Math.sqrt(sqSum / mCount) : 0.25;
+    const band = Math.round(Math.max(0.20, Math.min(0.80, rmse)) * 10) / 10;
+    days[i].noiseBand  = band;
+    days[i].noiseLower = Math.round((days[i].t - band) * 10) / 10;
+    days[i].noiseUpper = Math.round((days[i].t + band) * 10) / 10;
+  }
+
+  return days;
+}
+
+function getSlice(full) {
+  if (!full.length) return [];
+  if (selDays === 0) return full;
+  return full.slice(Math.max(0, full.length - selDays));
+}
+
+function calcStats(sl) {
+  if (!sl.length) return {avg:0, diff:0, s:'', e:''};
+  const ts = sl.map(d => d.t);
+  return {
+    avg:  ts.reduce((a,v) => a+v, 0) / ts.length,
+    diff: ts[ts.length-1] - ts[0],
+    s: sl[0].d, e: sl[sl.length-1].d
+  };
+}
+
+// ── SPARKLINE HELPER ─────────────────────────────────────────────────────────
+function drawSparkline(canvasId, pts) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 120;
+  const H = canvas.clientHeight || 26;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  const c = canvas.getContext('2d');
+  c.scale(dpr, dpr);
+  c.clearRect(0, 0, W, H);
+  if (pts.length < 2) return;
+
+  const lo = Math.min(...pts), hi = Math.max(...pts);
+  const span = hi - lo || 0.2;
+  const pad = 3;
+  const xOf = i => pad + (i / (pts.length - 1)) * (W - pad * 2);
+  const yOf = v => pad + (1 - (v - lo) / span) * (H - pad * 2);
+
+  c.beginPath();
+  c.moveTo(xOf(0), yOf(pts[0]));
+  for (let i = 1; i < pts.length; i++) c.lineTo(xOf(i), yOf(pts[i]));
+  c.strokeStyle = '#9479d4';
+  c.lineWidth = 1.8;
+  c.stroke();
+
+  const lx = xOf(pts.length - 1), ly = yOf(pts[pts.length - 1]);
+  c.beginPath();
+  c.arc(lx, ly, 2.5, 0, Math.PI * 2);
+  c.fillStyle = '#9479d4';
+  c.fill();
+}
+
+// ── CHART ────────────────────────────────────────────────────────────────────
+function drawChart(sl) {
+  const canvas = document.getElementById('chart');
+  const wrap   = canvas.parentElement;
+  const dpr    = window.devicePixelRatio || 1;
+  const W      = wrap.clientWidth  || 320;
+  const H      = wrap.clientHeight || 230;
+  canvas.width  = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  const c = canvas.getContext('2d');
+  c.scale(dpr, dpr);
+  c.clearRect(0, 0, W, H);
+  if (sl.length < 2) return;
+
+  const PL=10, PR=46, PT=10, PB=32;
+  const CW=W-PL-PR, CH=H-PT-PB;
+
+  // convert values to display unit
+  const sw = sl.map(d => cvt(d.w));
+  const tw = sl.map(d => cvt(d.t));
+
+  // y-axis range
+  const allV = [...sw, ...tw];
+  const lo = Math.min(...allV), hi = Math.max(...allV);
+  const span = hi - lo || 1;
+  const pad  = Math.max(span * 0.25, 0.4);
+  const yLo  = lo - pad, yHi = hi + pad;
+
+  const xOf = i => PL + (sl.length > 1 ? i/(sl.length-1) : 0.5) * CW;
+  const yOf = v => PT + (1 - (v-yLo)/(yHi-yLo)) * CH;
+
+  // grid + y-labels
+  const gStep  = span < 1.5 ? 0.5 : span < 4 ? 1 : span < 8 ? 2 : 5;
+  const gStart = Math.ceil(yLo / gStep) * gStep;
+  c.font      = '11px -apple-system,sans-serif';
+  c.textAlign = 'right';
+  c.fillStyle = 'rgba(255,255,255,0.30)';
+
+  let g = gStart, iter = 0;
+  while (g <= yHi + gStep*0.01 && iter++ < 25) {
+    const y = yOf(g);
+    if (y >= PT-2 && y <= PT+CH+2) {
+      c.setLineDash([3,4]);
+      c.strokeStyle = 'rgba(255,255,255,0.07)';
+      c.lineWidth = 1;
+      c.beginPath(); c.moveTo(PL, y); c.lineTo(PL+CW, y); c.stroke();
+      c.setLineDash([]);
+      c.fillText(g.toFixed(1), W-3, y+4);
+    }
+    g = Math.round((g + gStep) * 1000) / 1000;
+  }
+
+  // scale weight line (dashed across interpolated/unlogged segments, solid on logged)
+  if (showScale) {
+    c.beginPath();
+    c.moveTo(xOf(0), yOf(sw[0]));
+    for (let i=1; i<sl.length; i++) c.lineTo(xOf(i), yOf(sw[i]));
+    c.strokeStyle = 'rgba(90,55,158,0.6)';
+    c.lineWidth   = 1.8;
+    c.stroke();
+  }
+
+  // trend weight line
+  c.beginPath();
+  c.moveTo(xOf(0), yOf(tw[0]));
+  for (let i=1; i<sl.length; i++) c.lineTo(xOf(i), yOf(tw[i]));
+  c.strokeStyle = '#9479d4';
+  c.lineWidth   = 2.5;
+  c.stroke();
+
+  // dots on trend for every day (solid ring for logged, smaller/subtle for unlogged)
+  for (let i=0; i<sl.length; i++) {
+    const x = xOf(i), y = yOf(tw[i]);
+    const isLogged = sl[i].logged;
+    const radius = selDays <= 30 ? (isLogged ? 4.5 : 3.2) : (isLogged ? 3.5 : 2.2);
+    c.beginPath(); c.arc(x, y, radius, 0, Math.PI*2);
+    c.fillStyle = '#0d0d0e'; c.fill();
+    c.beginPath(); c.arc(x, y, radius, 0, Math.PI*2);
+    c.strokeStyle = isLogged ? '#9479d4' : 'rgba(148,121,212,0.55)';
+    c.lineWidth = isLogged ? 2 : 1.5;
+    c.stroke();
+  }
+
+  // x-axis labels
+  const DAY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const n   = sl.length;
+  const xl  = [];
+
+  if (selDays === 7 || n <= 8) {
+    sl.forEach((d,i) => xl.push({i, label: DAY[parseD(d.d).getDay()]}));
+  } else if (n <= 45) {
+    const step = Math.max(1, Math.ceil(n/5));
+    for (let i=0; i<n; i+=step) {
+      const dd=parseD(sl[i].d);
+      xl.push({i, label: dd.getDate()+' '+dd.toLocaleDateString('en-GB',{month:'short'})});
+    }
+    if (!xl.find(x => x.i === n-1)) {
+      const dd=parseD(sl[n-1].d);
+      xl.push({i: n-1, label: dd.getDate()+' '+dd.toLocaleDateString('en-GB',{month:'short'})});
+    }
+  } else if (n <= 130) {
+    let lastLbl = -99;
+    sl.forEach((d,i) => {
+      if (i - lastLbl >= 14) {
+        lastLbl = i;
+        const dd=parseD(d.d);
+        xl.push({i, label: dd.getDate()+' '+dd.toLocaleDateString('en-GB',{month:'short'})});
+      }
+    });
+  } else {
+    let lastM = -1;
+    sl.forEach((d,i) => {
+      const m = parseD(d.d).getMonth();
+      if (m !== lastM) {
+        lastM = m;
+        xl.push({i, label: parseD(d.d).toLocaleDateString('en-GB',{month:'short'})});
+      }
+    });
+  }
+
+  c.fillStyle  = 'rgba(255,255,255,0.38)';
+  c.textAlign  = 'center';
+  c.font       = '11px -apple-system,sans-serif';
+  xl.forEach(({i, label}) => c.fillText(label, xOf(i), H-PB+18));
+}
+
+// ── RENDER INSIGHTS ──────────────────────────────────────────────────────────
+function renderInsights(full) {
+  if (!full.length) {
+    document.getElementById('insTrend').innerHTML = '—';
+    document.getElementById('insBand').textContent = 'Noise Band: —';
+    document.getElementById('insScale').innerHTML = '—';
+    document.getElementById('insScaleSub').textContent = '—';
+    document.getElementById('insWeekly').innerHTML = '—';
+    document.getElementById('insVel').textContent = 'Velocity: —';
+    ['3d','7d','14d','30d'].forEach(k => {
+      document.getElementById('v'+k).textContent = '—';
+      document.getElementById('b'+k).textContent = '—';
+      document.getElementById('b'+k).className = 'cbadge';
+      drawSparkline('sp'+k, []);
+    });
+    return;
+  }
+
+  const latest = full[full.length - 1];
+  const loggedDays = full.filter(d => d.logged);
+  const lastLogged = loggedDays[loggedDays.length - 1] || latest;
+
+  // 1. Current Trend Weight + 14d Noise Band
+  document.getElementById('insTrend').innerHTML = `${fmt2(latest.t)} <small>${U()}</small>`;
+  document.getElementById('insBand').textContent =
+    `Band: ${fmt(latest.noiseLower)} – ${fmt(latest.noiseUpper)} ${U()} (±${fmt(latest.noiseBand)})`;
+
+  // 2. Current Scale Weight
+  document.getElementById('insScale').innerHTML = `${fmt(lastLogged.w)} <small>${U()}</small>`;
+  document.getElementById('insScaleSub').textContent =
+    lastLogged.d === latest.d ? `Logged today (${fmtShort(lastLogged.d)})` : `Last logged ${fmtShort(lastLogged.d)}`;
+
+  // 3. Weekly Rate (7-day rate = velocity * 7) & Daily Velocity
+  const wkRate = latest.v * 7;
+  document.getElementById('insWeekly').innerHTML = `${fmtSigned(wkRate, 2)} <small>${U()}/wk</small>`;
+  document.getElementById('insVel').textContent = `Velocity: ${fmtSigned(latest.v, 2)} ${U()}/day`;
+
+  // 4. Multi-day period change cards (3D, 7D, 14D, 30D)
+  const periods = [
+    { key: '3d',  days: 3 },
+    { key: '7d',  days: 7 },
+    { key: '14d', days: 14 },
+    { key: '30d', days: 30 }
+  ];
+
+  periods.forEach(({ key, days }) => {
+    const slice = full.slice(Math.max(0, full.length - days));
+    const delta = slice.length > 1 ? slice[slice.length - 1].t - slice[0].t : 0;
+    const status = delta >= 0.05 ? 'Increase' : delta <= -0.05 ? 'Decrease' : 'Stable';
+    const cls = delta >= 0.05 ? 'cbadge up' : delta <= -0.05 ? 'cbadge dn' : 'cbadge';
+
+    document.getElementById('v' + key).innerHTML = `${fmtSigned(delta, 1)} <small>${U()}</small>`;
+    const badge = document.getElementById('b' + key);
+    badge.textContent = status;
+    badge.className = cls;
+
+    drawSparkline('sp' + key, slice.map(d => cvt(d.t)));
+  });
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  const full = buildFullData();
+  const sl   = getSlice(full);
+  const st   = calcStats(sl);
+
+  // Average
+  document.getElementById('kAvg').innerHTML =
+    sl.length ? `${fmt(st.avg)} <small>${U()}</small>` : `— <small>${U()}</small>`;
+  document.getElementById('kRange').textContent = st.s ? fmtRange(st.s, st.e) : '—';
+
+  // Difference
+  const sign = st.diff >= 0.05 ? '+' : st.diff <= -0.05 ? '−' : '';
+  const diffVal = Math.abs(st.diff || 0) < 0.05 ? 0 : Math.abs(st.diff);
+  document.getElementById('kDiff').innerHTML = sl.length
+    ? `${sign}${fmt(diffVal)} <small style="font-size:15px">${U()}</small>`
+    : '—';
+  document.getElementById('kDiffSub').textContent = TFL[selDays] || 'All Time';
+
+  // Chart
+  drawChart(sl);
+
+  // Insights & Period Changes
+  renderInsights(full);
+
+  // D button state
+  const dBtn = document.getElementById('dBtn');
+  dBtn.textContent  = showScale ? 'D ▾' : 'T ▾';
+  dBtn.title        = showScale ? 'Hide Scale Weight' : 'Show Scale Weight';
+  dBtn.classList.toggle('muted', !showScale);
+
+  // Log table: display ALL days (including unlogged days with their calculated Trend Weight)
+  const allDaysDesc = [...full].reverse();
+  document.getElementById('logBody').innerHTML = allDaysDesc.length
+    ? allDaysDesc.map(d => {
+        const scaleCell = d.logged
+          ? `${fmt(d.w)} ${U()}`
+          : `<span style="color:var(--mu)">— <span class="sub-val">(${fmt(d.w)} ${d.interp ? 'interp' : 'hold'})</span></span>`;
+        const actionCell = d.logged
+          ? `<button class="xbtn" onclick="deleteEntry('${d.d}')" title="Delete weigh-in">×</button>`
+          : '';
+        return `
+        <tr class="${d.logged ? '' : 'unlogged'}">
+          <td>${fmtShort(d.d)}</td>
+          <td>${scaleCell}</td>
+          <td>${fmt(d.t)} ${U()}</td>
+          <td>${actionCell}</td>
+        </tr>`;
+      }).join('')
+    : '<tr class="noentry"><td colspan="4">No entries yet — add your first weigh-in above.</td></tr>';
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────────
+function addEntry() {
+  const date = document.getElementById('inDate').value;
+  const wRaw = parseFloat(document.getElementById('inWt').value);
+  if (!date)               { alert('Please select a date.'); return; }
+  if (isNaN(wRaw)||wRaw<=0){ alert('Please enter a valid weight.'); return; }
+
+  // always store internally in kg
+  const w = unit === 'lbs' ? wRaw / 2.20462 : wRaw;
+  const ex = rawData.findIndex(e => e.d === date);
+  if (ex >= 0) rawData[ex].w = w;
+  else { rawData.push({d: date, w}); rawData.sort((a,b) => a.d < b.d ? -1 : 1); }
+
+  document.getElementById('inWt').value = '';
+  render();
+}
+
+function deleteEntry(date) {
+  rawData = rawData.filter(e => e.d !== date);
+  render();
+}
+
+// ── EVENTS ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tf').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tf').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    selDays = parseInt(btn.dataset.days);
+    render();
+  });
+});
+
+document.getElementById('unitBtn').addEventListener('click', () => {
+  unit = unit === 'kg' ? 'lbs' : 'kg';
+  document.getElementById('inWt').placeholder = `Weight (${unit})`;
+  render();
+});
+
+// D button: toggle scale weight line visibility
+document.getElementById('dBtn').addEventListener('click', () => {
+  showScale = !showScale;
+  render();
+});
+
+// init
+document.getElementById('inDate').value = toStr(today());
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(render, 80);
+});
+render();
+</script>
+</body>
+</html>
