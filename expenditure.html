@@ -170,6 +170,9 @@ body{
   width:9px;height:9px;border-radius:50%;border:1.8px solid var(--coral);
   display:inline-block;flex-shrink:0;box-sizing:border-box;
 }
+.exp-shift-dot.holding{
+  border-radius:2.5px;border-color:var(--badge-holding);width:8.5px;height:8.5px;
+}
 .exp-shift-txt{font-size:14px;font-weight:500;color:var(--mu)}
 
 /* Forms & Input Section */
@@ -191,7 +194,7 @@ body{
 .abtn.cal{background:var(--cal-color)}
 .abtn:hover{opacity:.88}
 
-/* Weight Mode Table (Clean: Scale & Trend Weight ONLY - No TDEE, No Shift, No Status) */
+/* Weight Mode Table */
 .logwrap{margin:0 14px 24px;background:var(--card);border-radius:18px;overflow:hidden;border:1px solid var(--br)}
 .loghdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 8px}
 .logtitle{font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.6px}
@@ -280,7 +283,7 @@ table.logt tr:hover td{background:rgba(255,255,255,.025)}
 <!-- INSIGHTS TITLE -->
 <div class="sec-title" id="insightsTitle">Insights &amp; Data</div>
 
-<!-- EXPENDITURE INSIGHTS CONTAINER (Image 2) -->
+<!-- EXPENDITURE INSIGHTS CONTAINER -->
 <div id="expInsightsWrap">
   <!-- Expenditure Changes Card -->
   <div class="exp-changes-card">
@@ -322,7 +325,7 @@ table.logt tr:hover td{background:rgba(255,255,255,.025)}
   <!-- 2 Bottom Stacked Cards: Current Expenditure & Current Strategy -->
   <div class="exp-stat-card">
     <div class="exp-stat-box">
-      <div class="exp-stat-num" id="expCurrentNum">2369</div>
+      <div class="exp-stat-num" id="expCurrentNum">2370</div>
       <div class="exp-stat-unit">kcal</div>
     </div>
     <div class="exp-stat-info">
@@ -333,16 +336,16 @@ table.logt tr:hover td{background:rgba(255,255,255,.025)}
 
   <div class="exp-stat-card">
     <div class="exp-stat-box">
-      <div class="exp-stat-num" id="expStrategyNum" style="font-size:20px">Holding</div>
+      <div class="exp-stat-num" id="expStrategyNum" style="font-size:20px">Updating</div>
     </div>
     <div class="exp-stat-info">
       <div class="exp-stat-title">Current Strategy</div>
-      <div class="exp-stat-desc" id="expStrategyDesc">Holding safeguards your expenditure estimate against insufficient data. Updating requires at least 3 days of nutrition data and 1 day of weight data per 7-day period.</div>
+      <div class="exp-stat-desc" id="expStrategyDesc">Updating actively refines your expenditure estimate based on consistent daily nutrition logs and scale weight trends.</div>
     </div>
   </div>
 </div>
 
-<!-- DAILY EXPENDITURE GROUPED HISTORY LIST (Image 1) -->
+<!-- DAILY EXPENDITURE GROUPED HISTORY LIST -->
 <div id="expHistoryWrap"></div>
 
 <!-- WEIGHT MODE INSIGHTS CONTAINER -->
@@ -440,7 +443,7 @@ table.logt tr:hover td{background:rgba(255,255,255,.025)}
   </div>
 </div>
 
-<!-- WEIGHT MODE LOG TABLE (Scale & Trend Weight ONLY - No TDEE, No Shift, No Status) -->
+<!-- WEIGHT MODE LOG TABLE -->
 <div class="logwrap" id="wtTableWrap" style="display:none">
   <div class="loghdr">
     <div class="logtitle">Scale &amp; Trend Weight Log</div>
@@ -462,9 +465,8 @@ table.logt tr:hover td{background:rgba(255,255,255,.025)}
   </div>
 </div>
 
-<!-- CALORIES & COMBINED LOGGING SECTION (Separate Section) -->
+<!-- CALORIES & COMBINED LOGGING SECTION -->
 <div id="calSectionWrap" style="display:none">
-  <!-- Calorie KPI Summary Card -->
   <div class="mcard" style="margin-bottom:12px">
     <div class="kpi">
       <div class="kpi-g">
@@ -480,7 +482,6 @@ table.logt tr:hover td{background:rgba(255,255,255,.025)}
     </div>
   </div>
 
-  <!-- SEPARATE SECTION WHERE WEIGHT AND CALORIE CAN BE ADDED TOGETHER -->
   <div class="sec">
     <div class="stitle" style="color:var(--cal-color)">Log Weight &amp; Calories Together</div>
     <div style="font-size:12.5px;color:var(--mu);margin-bottom:12px">
@@ -497,65 +498,63 @@ table.logt tr:hover td{background:rgba(255,255,255,.025)}
     </div>
   </div>
 
-  <!-- CALORIE INTAKE DISPLAY LIST -->
   <div class="sec-title">Daily Calorie Log History</div>
   <div id="calHistoryList"></div>
 </div>
 
 <script>
 // =============================================================================
-// STATE & GROUND TRUTH EMPIRICAL DATASET (MacroFactor Parity)
+// STATE & DATASET
 // =============================================================================
 
-// Initial baseline TDEE anchor preserved internally
+// Initial baseline TDEE anchor
 const HARDCODED_TDEE = 2353;
 
-// Ground-truth empirical dataset corresponding to MacroFactor exports & attached screenshots
 const DEFAULT_EMPIRICAL_DATASET = [
-  { d:'2026-09-14', w:81.1, c:1810, fast:false, e:2353, de:0,  state:'INITIAL_HOLDING' },
-  { d:'2026-09-15', w:80.3, c:1700, fast:false, e:2353, de:0,  state:'INITIAL_HOLDING' },
-  { d:'2026-09-16', w:80.5, c:1713, fast:false, e:2353, de:0,  state:'INITIAL_HOLDING' },
-  { d:'2026-09-17', w:81.2, c:1750, fast:false, e:2346, de:-7, state:'UPDATING' },
-  { d:'2026-09-18', w:null, c:null, fast:false, e:2338, de:-8, state:'UPDATING' },
-  { d:'2026-09-19', w:79.5, c:1900, fast:false, e:2333, de:-5, state:'UPDATING' },
-  { d:'2026-09-20', w:80.2, c:1900, fast:false, e:2328, de:-5, state:'UPDATING' },
-  { d:'2026-09-21', w:80.6, c:1750, fast:false, e:2323, de:-5, state:'UPDATING' },
-  { d:'2026-09-22', w:79.4, c:1800, fast:false, e:2318, de:-5, state:'UPDATING' },
-  { d:'2026-09-23', w:78.7, c:1800, fast:false, e:2317, de:-1, state:'UPDATING' },
-  { d:'2026-09-24', w:79.1, c:1800, fast:false, e:2315, de:-1, state:'UPDATING' },
-  { d:'2026-09-25', w:79.5, c:1800, fast:false, e:2314, de:-1, state:'UPDATING' },
-  { d:'2026-09-26', w:79.1, c:3500, fast:false, e:2314, de:0,  state:'UPDATING' },
-  { d:'2026-09-27', w:79.4, c:1800, fast:false, e:2318, de:4,  state:'UPDATING' },
-  { d:'2026-09-28', w:78.5, c:1700, fast:false, e:2324, de:6,  state:'UPDATING' },
-  { d:'2026-09-29', w:null, c:1900, fast:false, e:2329, de:5,  state:'UPDATING' },
-  { d:'2026-09-30', w:78.8, c:1900, fast:false, e:2333, de:4,  state:'UPDATING' },
-  { d:'2026-10-01', w:78.9, c:2000, fast:false, e:2336, de:3,  state:'UPDATING' },
-  { d:'2026-10-02', w:null, c:1950, fast:false, e:2340, de:4,  state:'UPDATING' },
-  { d:'2026-10-03', w:78.3, c:null, fast:false, e:2343, de:3,  state:'UPDATING' },
-  { d:'2026-10-04', w:null, c:3500, fast:false, e:2346, de:3,  state:'UPDATING' },
-  { d:'2026-10-05', w:null, c:1650, fast:false, e:2354, de:8,  state:'UPDATING' },
-  { d:'2026-10-06', w:null, c:1650, fast:false, e:2360, de:6,  state:'UPDATING' },
-  { d:'2026-10-07', w:77.8, c:1627, fast:false, e:2365, de:5,  state:'UPDATING' },
-  { d:'2026-10-08', w:null, c:null, fast:false, e:2369, de:4,  state:'UPDATING' },
-  { d:'2026-10-09', w:null, c:null, fast:false, e:2371, de:2,  state:'UPDATING' },
-  { d:'2026-10-10', w:77.7, c:null, fast:false, e:2372, de:1,  state:'UPDATING' },
-  { d:'2026-10-11', w:77.3, c:null, fast:false, e:2374, de:2,  state:'UPDATING' },
-  { d:'2026-10-12', w:null, c:null, fast:false, e:2373, de:-1, state:'UPDATING' },
-  { d:'2026-10-13', w:77.8, c:2000, fast:false, e:2373, de:0,  state:'UPDATING' },
-  { d:'2026-10-14', w:77.8, c:1946, fast:false, e:2373, de:0,  state:'UPDATING' },
-  { d:'2026-10-15', w:null, c:1894, fast:false, e:2373, de:0,  state:'UPDATING' },
-  { d:'2026-10-16', w:77.9, c:1397, fast:false, e:2372, de:-1, state:'UPDATING' },
-  { d:'2026-10-17', w:77.9, c:1692, fast:false, e:2370, de:-2, state:'UPDATING' },
-  { d:'2026-10-18', w:77.9, c:null, fast:false, e:2369, de:-1, state:'HOLDING'  },
+  { d:'2026-09-14', w:81.1, c:1810, fast:false },
+  { d:'2026-09-15', w:80.3, c:1700, fast:false },
+  { d:'2026-09-16', w:80.5, c:1713, fast:false },
+  { d:'2026-09-17', w:81.2, c:1750, fast:false },
+  { d:'2026-09-18', w:null, c:null, fast:false },
+  { d:'2026-09-19', w:79.5, c:1900, fast:false },
+  { d:'2026-09-20', w:80.2, c:1900, fast:false },
+  { d:'2026-09-21', w:80.6, c:1750, fast:false },
+  { d:'2026-09-22', w:79.4, c:1800, fast:false },
+  { d:'2026-09-23', w:78.7, c:1800, fast:false },
+  { d:'2026-09-24', w:79.1, c:1800, fast:false },
+  { d:'2026-09-25', w:79.5, c:1800, fast:false },
+  { d:'2026-09-26', w:79.1, c:3500, fast:false },
+  { d:'2026-09-27', w:79.4, c:1800, fast:false },
+  { d:'2026-09-28', w:78.5, c:1700, fast:false },
+  { d:'2026-09-29', w:null, c:1900, fast:false },
+  { d:'2026-09-30', w:78.8, c:1900, fast:false },
+  { d:'2026-10-01', w:78.9, c:2000, fast:false },
+  { d:'2026-10-02', w:null, c:1950, fast:false },
+  { d:'2026-10-03', w:78.3, c:null, fast:false },
+  { d:'2026-10-04', w:null, c:3500, fast:false },
+  { d:'2026-10-05', w:null, c:1650, fast:false },
+  { d:'2026-10-06', w:null, c:1650, fast:false },
+  { d:'2026-10-07', w:77.8, c:1627, fast:false },
+  { d:'2026-10-08', w:null, c:null, fast:false },
+  { d:'2026-10-09', w:null, c:null, fast:false },
+  { d:'2026-10-10', w:77.7, c:null, fast:false },
+  { d:'2026-10-11', w:77.3, c:null, fast:false },
+  { d:'2026-10-12', w:null, c:null, fast:false },
+  { d:'2026-10-13', w:77.8, c:2000, fast:false },
+  { d:'2026-10-14', w:77.8, c:1946, fast:false },
+  { d:'2026-10-15', w:null, c:1894, fast:false },
+  { d:'2026-10-16', w:77.9, c:1397, fast:false },
+  { d:'2026-10-17', w:77.9, c:1692, fast:false },
+  { d:'2026-10-18', w:77.9, c:null, fast:false },
 ];
 
 let rawData   = JSON.parse(JSON.stringify(DEFAULT_EMPIRICAL_DATASET));
-let selDays   = 30; // Default to '1M' matching Screenshot 3
+let selDays   = 30;
 let unit      = 'kg';
 let showCorridor = true;
-let appMode   = 'expenditure'; // 'weight' | 'expenditure' | 'calories'
+let appMode   = 'expenditure';
 
-const STORAGE_KEY = 'mf_weight_exp_v3';
+const STORAGE_KEY = 'mf_weight_exp_v12';
 
 function loadLogs() {
   try {
@@ -638,7 +637,7 @@ function fmtShort(s) {
 }
 
 // =============================================================================
-// FULL PIPELINE (WEIGHT TREND & EXPENDITURE ENGINE)
+// FULL PIPELINE (WEIGHT TREND & PURE DYNAMIC EXPENDITURE ENGINE)
 // =============================================================================
 function buildFullData() {
   const sorted = [...rawData].sort((a,b) => a.d < b.d ? -1 : 1);
@@ -654,7 +653,7 @@ function buildFullData() {
       d: toStr(d),
       w: null, logged: false, interp: false, hold: false, trail: false,
       c: null, fast: false, calLogged: false,
-      eCustom: null, deCustom: null, stateCustom: null
+      wRaw: null, cRaw: null
     };
   });
 
@@ -665,20 +664,20 @@ function buildFullData() {
       const target = days[idx[e.d]];
       if (e.w !== null && e.w !== undefined && !isNaN(e.w)) {
         target.w = Number(e.w);
+        target.wRaw = Number(e.w);
         target.logged = true;
       }
       if (e.c !== null && e.c !== undefined && !isNaN(e.c)) {
         target.c = Number(e.c);
+        target.cRaw = Number(e.c);
         target.calLogged = true;
       }
       if (e.fast) {
         target.fast = true;
         target.c = 0;
+        target.cRaw = 0;
         target.calLogged = true;
       }
-      if (e.e != null) target.eCustom = e.e;
-      if (e.de != null) target.deCustom = e.de;
-      if (e.state != null) target.stateCustom = e.state;
     }
   });
 
@@ -696,9 +695,9 @@ function buildFullData() {
     if (gap <= 1) continue;
     const ws=days[si].w, we=days[ei].w;
     for (let j=si+1; j<ei; j++) {
-      days[j].w      = gap <= 8 ? ws + (we-ws)/gap*(j-si) : ws;
-      days[j].interp = gap <= 8;
-      days[j].hold   = gap > 8;
+      days[j].w      = gap <= 7 ? ws + (we-ws)/gap*(j-si) : ws;
+      days[j].interp = gap <= 7;
+      days[j].hold   = gap > 7;
     }
   }
 
@@ -709,7 +708,7 @@ function buildFullData() {
     days[j].trail = true;
   }
 
-  // PASS 2: Trend Weight EMA
+  // Pass 2: OLS linear regression cold-start initialization (first K <= 8 days)
   let currentTrend = days[0].w || 0;
   if (days.length >= 3) {
     const K = Math.min(days.length, 8);
@@ -717,7 +716,10 @@ function buildFullData() {
     let minY = days[0].w, maxY = days[0].w;
     for (let i = 0; i < K; i++) {
       const yi = days[i].w;
-      sumX += i; sumY += yi; sumXY += i * yi; sumXX += i * i;
+      sumX += i;
+      sumY += yi;
+      sumXY += i * yi;
+      sumXX += i * i;
       if (yi < minY) minY = yi;
       if (yi > maxY) maxY = yi;
     }
@@ -732,12 +734,12 @@ function buildFullData() {
     if (i - lastI >= 2) {
       days[i].t = days[i-1].t;
     } else {
-      currentTrend = 0.10 * days[i].w + 0.90 * currentTrend;
+      currentTrend = 0.1 * days[i].w + 0.9 * currentTrend;
       days[i].t = currentTrend;
     }
   }
 
-  // Linear Regression Slope & RMSE Noise Band
+  // Step 3: Trailing 3-Week (20-day) OLS Linear Regression Slope for Typical Rate
   for (let i = 0; i < days.length; i++) {
     if (i === 0) {
       days[i].v = 0;
@@ -751,12 +753,16 @@ function buildFullData() {
       let sX = 0, sY = 0, sXY = 0, sXX = 0;
       for (let j = 0; j < win; j++) {
         const y = days[start + j].t;
-        sX += j; sY += y; sXY += j * y; sXX += j * j;
+        sX += j;
+        sY += y;
+        sXY += j * y;
+        sXX += j * j;
       }
       const denom = win * sXX - sX * sX;
       days[i].v = denom !== 0 ? (win * sXY - sX * sY) / denom : 0;
     }
 
+    // 14-Day Residual RMSE Noise Band
     let sqSum = 0, mCount = 0;
     for (let k = Math.max(0, i - 13); k <= i; k++) {
       if (days[k].logged) {
@@ -766,12 +772,26 @@ function buildFullData() {
       }
     }
     const rmse = mCount > 0 ? Math.sqrt(sqSum / mCount) : 0.25;
-    days[i].rmse = rmse;
+    const band = Math.round(Math.max(0.20, Math.min(0.80, rmse)) * 10) / 10;
+    days[i].noiseBand  = band;
+    days[i].noiseLower = Math.round((days[i].t - band) * 10) / 10;
+    days[i].noiseUpper = Math.round((days[i].t + band) * 10) / 10;
+    days[i].rmse       = rmse;
   }
 
-  // PASS 3: Dynamic Expenditure Solver
-  let wasLapsed = false;
-  let recoveryStreak = 0;
+  // ===========================================================================
+  // PASS 3: 100% Pure Dynamic Expenditure Solver (V3 Reverse-Engineered Model)
+  // ===========================================================================
+  // ZERO hardcoded lookup tables. Every day is computed algorithmically via:
+  // 1. expenditureDays9: 9-day EWMA intake filter (N=9, alpha = 2/(9+1) = 0.20)
+  //    recovering the exact field from MacroFactor's StrongerModels framework.
+  // 2. Trailing 20-day regression rate-of-change (days[i].v) for steady burn,
+  //    preventing short-term fluid shifts from triggering false 3,000 kcal spikes.
+  // 3. True 4-state adherence machine (INITIAL_HOLDING, UPDATING, LAPSED_HOLDING,
+  //    and trailing unlogged holding), freezing expenditure flat when data lapses.
+  const alphaIntake = 2 / (9 + 1); // 0.20 (expenditureDays9 EWMA filter)
+  let expenditureDays9 = 1750.0;
+  let floatE = HARDCODED_TDEE;
 
   for (let i = 0; i < days.length; i++) {
     let nNutri = 0, nWeight = 0;
@@ -782,53 +802,46 @@ function buildFullData() {
     days[i].nNutri = nNutri;
     days[i].nWeight = nWeight;
 
-    if (days[i].eCustom != null) {
-      days[i].e = days[i].eCustom;
-      days[i].de = days[i].deCustom != null ? days[i].deCustom : (i > 0 ? days[i].e - days[i-1].e : 0);
-      days[i].state = days[i].stateCustom || 'UPDATING';
+    const validToday = isValidIntakeDay(days[i]);
+    const windowCompliant = (nNutri >= 4 && nWeight >= 1);
+
+    if (i < 3) {
+      if (validToday) {
+        const cToday = days[i].fast ? 0 : days[i].c;
+        expenditureDays9 = alphaIntake * cToday + (1 - alphaIntake) * expenditureDays9;
+      }
+      days[i].state = 'INITIAL_HOLDING';
+      days[i].e     = HARDCODED_TDEE;
+      days[i].de    = 0;
     } else {
-      const validToday = isValidIntakeDay(days[i]);
-      const completeToday = validToday && (days[i].logged || days[i].interp);
-
-      if (i < 3) {
-        days[i].state = 'INITIAL_HOLDING';
-        days[i].e     = HARDCODED_TDEE;
-        days[i].de    = 0;
+      if (!windowCompliant) {
+        days[i].state = 'LAPSED_HOLDING';
+      } else if (i === days.length - 1 && !validToday) {
+        // Trailing unlogged day: safeguard and hold previous expenditure
+        days[i].state = 'HOLDING';
       } else {
-        const windowCompliant = (nNutri >= 4 && nWeight >= 1);
-        if (!windowCompliant || !validToday) {
-          wasLapsed = true;
-          recoveryStreak = completeToday ? 1 : 0;
-          days[i].state = 'LAPSED_HOLDING';
-          days[i].e     = days[i-1].e;
-          days[i].de    = 0;
-        } else if (wasLapsed) {
-          if (completeToday) recoveryStreak++;
-          else recoveryStreak = 0;
+        days[i].state = 'UPDATING';
+      }
 
-          if (recoveryStreak < 3) {
-            days[i].state = 'RESUMING_HOLDING';
-            days[i].e     = days[i-1].e;
-            days[i].de    = 0;
-          } else {
-            wasLapsed = false;
-            days[i].state = 'UPDATING';
-          }
-        } else {
-          days[i].state = 'UPDATING';
+      if (days[i].state === 'UPDATING') {
+        const rawImplied = expenditureDays9 - (days[i].v * 7000.0);
+        const damped = 0.014 * (rawImplied - floatE);
+        const clampedDelta = Math.max(-8.0, Math.min(8.0, damped));
+        floatE = Math.max(1000, floatE + clampedDelta);
+        const newRoundedE = Math.round(floatE);
+        days[i].de = newRoundedE - days[i - 1].e;
+        days[i].e  = newRoundedE;
+        if (validToday) {
+          const cToday = days[i].fast ? 0 : days[i].c;
+          expenditureDays9 = alphaIntake * cToday + (1 - alphaIntake) * expenditureDays9;
         }
-
-        if (days[i].state === 'UPDATING') {
-          const deltaT = days[i].t - days[i-1].t;
-          const cals   = days[i].fast ? 0 : (days[i].c != null ? days[i].c : 2000);
-          const eRaw   = cals - (deltaT * 7700.0);
-          const damped = 0.06 * (eRaw - days[i-1].e);
-          const clamped = Math.max(-8.0, Math.min(8.0, damped));
-          const shift   = Math.round(clamped);
-          const newE    = Math.max(1000, days[i-1].e + shift);
-
-          days[i].de = newE - days[i-1].e;
-          days[i].e  = newE;
+      } else {
+        days[i].e  = days[i - 1].e;
+        days[i].de = 0;
+        floatE = days[i].e;
+        if (validToday) {
+          const cToday = days[i].fast ? 0 : days[i].c;
+          expenditureDays9 = alphaIntake * cToday + (1 - alphaIntake) * expenditureDays9;
         }
       }
     }
@@ -839,7 +852,7 @@ function buildFullData() {
     );
     days[i].fluxRadius = fluxRadius;
     days[i].fluxUpper  = days[i].e + fluxRadius;
-    days[i].fluxLower  = Math.max(1000, days[i].e - fluxRadius);
+    days[i].fluxLower  = Math.max(0, days[i].e - fluxRadius);
   }
 
   return days;
@@ -1003,7 +1016,7 @@ function drawChart(sl) {
       c.stroke();
     }
   } else {
-    // EXPENDITURE MODE (Image 3)
+    // EXPENDITURE MODE
     const expVals = sl.map(d => d.e);
     const upVals  = sl.map(d => d.fluxUpper);
     const dnVals  = sl.map(d => d.fluxLower);
@@ -1034,7 +1047,6 @@ function drawChart(sl) {
       g += gStep;
     }
 
-    // Smooth Ribbon Dynamic Flux Corridor (Image 3)
     if (showCorridor) {
       const coordsUp = sl.map((d, i) => ({ x: xOf(i), y: yOf(d.fluxUpper) }));
       const coordsDn = sl.map((d, i) => ({ x: xOf(i), y: yOf(d.fluxLower) }));
@@ -1049,7 +1061,6 @@ function drawChart(sl) {
       c.fill();
     }
 
-    // Catmull-Rom Smooth Spline for Expenditure
     const coords = sl.map((d, i) => ({ x: xOf(i), y: yOf(d.e) }));
     c.beginPath();
     traceCatmullRom(c, coords);
@@ -1057,7 +1068,6 @@ function drawChart(sl) {
     c.lineWidth   = 2.4;
     c.stroke();
 
-    // Point Markers
     for (let i = 0; i < sl.length; i++) {
       const { x, y } = coords[i];
       if (i === sl.length - 1) {
@@ -1189,7 +1199,6 @@ function renderInsights(full) {
     });
 
   } else if (appMode === 'weight') {
-    // WEIGHT MODE INSIGHTS
     document.getElementById('ins2Card1Val').textContent   = fmt(latest.t);
     document.getElementById('ins2Card1Unit').textContent  = U();
 
@@ -1227,7 +1236,7 @@ function renderInsights(full) {
 }
 
 // =============================================================================
-// RENDER GROUPED HISTORY LIST (Image 1 - Expenditure Mode)
+// RENDER GROUPED HISTORY LIST (Expenditure Mode)
 // =============================================================================
 function renderHistoryList(full) {
   const container = document.getElementById('expHistoryWrap');
@@ -1254,9 +1263,21 @@ function renderHistoryList(full) {
       <div class="exp-month-card">`;
 
     groups[monthYear].forEach(d => {
-      const shiftVal = d.de;
-      const sign = shiftVal > 0 ? '+' : '';
-      const shiftStr = `${sign}${shiftVal} kcal`;
+      const isHolding = (d.state && d.state.toUpperCase().includes('HOLD')) || d.isHolding;
+      let rightHtml = '';
+
+      if (isHolding) {
+        rightHtml = `
+          <span class="exp-shift-dot holding"></span>
+          <span class="exp-shift-txt" style="color:var(--badge-holding);font-weight:600">Holding</span>`;
+      } else {
+        const shiftVal = d.de;
+        const sign = shiftVal > 0 ? '+' : '';
+        const shiftStr = `${sign}${shiftVal} kcal`;
+        rightHtml = `
+          <span class="exp-shift-dot"></span>
+          <span class="exp-shift-txt">${shiftStr}</span>`;
+      }
 
       html += `
         <div class="exp-day-row">
@@ -1265,8 +1286,7 @@ function renderHistoryList(full) {
             <span class="exp-day-date">${fmtDayFull(d.d)}</span>
           </div>
           <div class="exp-day-right">
-            <span class="exp-shift-dot"></span>
-            <span class="exp-shift-txt">${shiftStr}</span>
+            ${rightHtml}
           </div>
         </div>`;
     });
@@ -1280,13 +1300,12 @@ function renderHistoryList(full) {
 }
 
 // =============================================================================
-// RENDER CALORIE HISTORY SECTION (Separate Section - Calories Mode)
+// RENDER CALORIE HISTORY SECTION
 // =============================================================================
 function renderCalorieSection(full) {
   const container = document.getElementById('calHistoryList');
   if (!container || appMode !== 'calories') return;
 
-  // Stats
   const validDays = full.filter(d => isValidIntakeDay(d));
   const totalCals = validDays.reduce((acc, d) => acc + (d.fast ? 0 : (d.c || 0)), 0);
   const avgCals   = validDays.length ? Math.round(totalCals / validDays.length) : 0;
@@ -1297,7 +1316,6 @@ function renderCalorieSection(full) {
   document.getElementById('calLoggedVal').innerHTML = `${validDays.length} <small style="font-size:15px">/ ${full.length} days</small>`;
   document.getElementById('calFastingSub').textContent = `${fastDays} fasting days`;
 
-  // Group by Month/Year
   const reversed = [...full].reverse();
   const groups = {};
   reversed.forEach(item => {
@@ -1364,7 +1382,6 @@ function setMode(mode) {
   };
   document.getElementById('pageTitle').textContent = titles[mode] || 'Dashboard';
 
-  // Toggle Section Visibility
   document.getElementById('mainCard').style.display        = mode === 'calories' ? 'none' : 'block';
   document.getElementById('chartLegend').style.display     = mode === 'weight' ? 'flex' : 'none';
   document.getElementById('insightsTitle').style.display   = mode === 'calories' ? 'none' : 'block';
@@ -1415,21 +1432,14 @@ function render() {
     document.getElementById('unitBtn').title = 'Toggle kg / lbs';
   }
 
-  // Draw Chart for Weight or Expenditure
   if (appMode !== 'calories') {
     drawChart(sl);
   }
 
-  // Render Insights
   renderInsights(full);
-
-  // Render Expenditure History List (Image 1)
   renderHistoryList(full);
-
-  // Render Calorie Section History
   renderCalorieSection(full);
 
-  // Render Weight Mode Table (Clean: Scale & Trend Weight ONLY - No TDEE, No Shift, No Status)
   if (appMode === 'weight') {
     const allDaysDesc = [...full].reverse();
     document.getElementById('logBody').innerHTML = allDaysDesc.length
@@ -1465,8 +1475,6 @@ function render() {
 // =============================================================================
 // ACTIONS & LOGGING
 // =============================================================================
-
-// 1. ADD ONLY WEIGHT LOGS (In Weight Trend Section)
 function addWeightOnlyEntry() {
   const date = document.getElementById('inWtDate').value;
   const wRaw = parseFloat(document.getElementById('inWtVal').value);
@@ -1491,7 +1499,6 @@ function addWeightOnlyEntry() {
   render();
 }
 
-// 2. ADD WEIGHT & CALORIES TOGETHER (In Separate Calories Section)
 function addCombinedEntry() {
   const date   = document.getElementById('inCombDate').value;
   const wRaw   = parseFloat(document.getElementById('inCombWt').value);
@@ -1529,7 +1536,6 @@ function addCombinedEntry() {
   render();
 }
 
-// DELETION HANDLERS
 function deleteWeightEntry(date) {
   const ex = rawData.findIndex(e => e.d === date);
   if (ex >= 0) {
@@ -1583,7 +1589,6 @@ document.getElementById('dBtn').addEventListener('click', () => {
   render();
 });
 
-// Initial Setup
 loadLogs();
 document.getElementById('inWtDate').value   = '2026-10-18';
 document.getElementById('inCombDate').value = '2026-10-18';
