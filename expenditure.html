@@ -1477,23 +1477,41 @@
 
       let wasInHold = false;
       let lastHoldIdx = -1;
+      // Spec §3 guard 3: consecutive nutrition-logged days for hold recovery
+      let consecutiveCompleteDays = 0;
 
       for (let i = 0; i < days.length; i++) {
-        // Rolling 7-day window [i - 6 .. i] including today
+        // Rolling 7-day window:
+        // Evaluates completed trailing history [i - 7 .. i - 1] if today has no intake yet,
+        // or [i - 6 .. i] if today has valid intake. This ensures an unlogged day doesn't
+        // prematurely trigger a hold before the trailing week's compliance actually lapses.
         let nNutri = 0, nWeight = 0;
-        for (let k = Math.max(0, i - 6); k <= i; k++) {
-          if (isValidIntakeDay(days[k])) nNutri++;
-          if (days[k].logged) nWeight++;
+        const validToday = isValidIntakeDay(days[i]);
+
+        if (i >= 7) {
+          const sK = validToday ? (i - 6) : (i - 7);
+          const eK = validToday ? i : (i - 1);
+          for (let k = sK; k <= eK; k++) {
+            if (isValidIntakeDay(days[k])) nNutri++;
+            if (days[k].logged) nWeight++;
+          }
+        } else {
+          for (let k = Math.max(0, i - 6); k <= i; k++) {
+            if (isValidIntakeDay(days[k])) nNutri++;
+            if (days[k].logged) nWeight++;
+          }
         }
         days[i].nNutri = nNutri;
         days[i].nWeight = nWeight;
 
-        const validToday = isValidIntakeDay(days[i]);
-
-        // Compliance requires >= 4 nutrition logs & >= 1 weight log in the rolling 7-day window
-        const windowCompliant = (nNutri >= 4 && nWeight >= 1);
+        // Compliance requires >= 3 nutrition logs & >= 1 weight log in the rolling 7-day window
+        const windowCompliant = (nNutri >= 3 && nWeight >= 1);
 
         // Dynamic MacroFactor V3 4-State Lifecycle Machine
+        // The state machine uses the streak value from the END of the previous day
+        // (check-before-increment). This matches MacroFactor's behavior where the
+        // 3rd logging day completes the streak but remains in Holding; Updating
+        // begins on the following day.
         if (i < 3) {
           days[i].state = 'INITIAL_HOLDING';
           days[i].strategy = 'Holding';
@@ -1503,7 +1521,9 @@
           wasInHold = true;
           lastHoldIdx = i;
         } else if (wasInHold) {
-          if (windowCompliant && validToday) {
+          // Resuming requires 3 consecutive nutrition-logged days AND rolling compliance.
+          // Streak is checked BEFORE today's increment — the 3rd day stays in Holding.
+          if (consecutiveCompleteDays >= 3 && windowCompliant) {
             days[i].state = 'UPDATING';
             days[i].strategy = 'Updating';
             wasInHold = false;
@@ -1526,6 +1546,16 @@
           days[i].state = 'UPDATING';
           days[i].strategy = 'Updating';
         }
+
+        // Spec §3 guard 3: Update resumption streak AFTER state machine check.
+        // Tracks consecutive days of nutrition logging only (not weight).
+        // Weight compliance is enforced by the rolling 7-day window above.
+        if (validToday) {
+          consecutiveCompleteDays++;
+        } else {
+          consecutiveCompleteDays = 0;
+        }
+        days[i].completeStreak = consecutiveCompleteDays;
 
         if (days[i].state === 'UPDATING') {
           // Velocity calculation:
@@ -1971,7 +2001,7 @@
         document.getElementById('expStrategyNum').textContent = strategyName;
         document.getElementById('expStrategyDesc').textContent = isUpd
           ? 'Updating actively refines your expenditure estimate based on consistent daily nutrition logs and scale weight trends.'
-          : 'Holding safeguards your expenditure estimate against insufficient data. Updating requires at least 4 days of nutrition data and 1 day of weight data per 7-day period.';
+          : 'Holding safeguards your expenditure estimate against insufficient data. Updating requires at least 3 days of nutrition data and 1 day of weight data per 7-day period.';
 
         const horizons = [
           { key: '3d', days: 3 },
