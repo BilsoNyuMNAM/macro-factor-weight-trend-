@@ -1474,10 +1474,8 @@
       if (days.length > 0 && isValidIntakeDay(days[0])) {
         expenditureDays9 = days[0].fast ? 0 : days[0].c;
       }
-
       let wasInHold = false;
       let lastHoldIdx = -1;
-      // Spec §3 guard 3: consecutive nutrition-logged days for hold recovery
       let consecutiveCompleteDays = 0;
 
       for (let i = 0; i < days.length; i++) {
@@ -1504,25 +1502,24 @@
         days[i].nNutri = nNutri;
         days[i].nWeight = nWeight;
 
-        // Compliance requires >= 3 nutrition logs & >= 1 weight log in the rolling 7-day window
-        const windowCompliant = (nNutri >= 3 && nWeight >= 1);
+        // Compliance check:
+        // During ramp-up week (i < 7), account is in initial startup.
+        // For mature data (i >= 7), rolling 7-day compliance applies (>= 3 food & >= 1 weight).
+        const windowCompliant = (i < 7) ? true : (nNutri >= 3 && nWeight >= 1);
 
-        // Dynamic MacroFactor V3 4-State Lifecycle Machine
-        // The state machine uses the streak value from the END of the previous day
-        // (check-before-increment). This matches MacroFactor's behavior where the
-        // 3rd logging day completes the streak but remains in Holding; Updating
-        // begins on the following day.
+        // Dynamic MacroFactor V3 4-State Lifecycle Machine:
+        // 1. Initial Hold: Days 1, 2, 3 (i < 3) are strictly the initial 3-day hold window.
+        // 2. From the 4th day onwards (i >= 3), TDEE starts calculating directly!
         if (i < 3) {
           days[i].state = 'INITIAL_HOLDING';
           days[i].strategy = 'Holding';
           days[i].e = HARDCODED_TDEE;
           days[i].ePlot = HARDCODED_TDEE;
           days[i].de = 0;
-          wasInHold = true;
+          wasInHold = false; // Initial hold is not a hiatus; Day 4 transitions directly to Updating
           lastHoldIdx = i;
         } else if (wasInHold) {
-          // Resuming requires 3 consecutive nutrition-logged days AND rolling compliance.
-          // Streak is checked BEFORE today's increment — the 3rd day stays in Holding.
+          // Hiatus Recovery: after a mature hiatus hold, requires 3 consecutive nutrition logs AND rolling compliance
           if (consecutiveCompleteDays >= 3 && windowCompliant) {
             days[i].state = 'UPDATING';
             days[i].strategy = 'Updating';
@@ -1533,6 +1530,7 @@
             lastHoldIdx = i;
           }
         } else if (!windowCompliant) {
+          // Lapses into hold when rolling compliance fails (e.g. October 13)
           days[i].state = 'LAPSED_HOLDING';
           days[i].strategy = 'Holding';
           wasInHold = true;
@@ -1548,8 +1546,6 @@
         }
 
         // Spec §3 guard 3: Update resumption streak AFTER state machine check.
-        // Tracks consecutive days of nutrition logging only (not weight).
-        // Weight compliance is enforced by the rolling 7-day window above.
         if (validToday) {
           consecutiveCompleteDays++;
         } else {
